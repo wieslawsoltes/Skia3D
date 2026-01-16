@@ -1,0 +1,51 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Skia3D.Sample"
+        mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
+        x:Class="Skia3D.Sample.MainWindow"
+        Title="Skia3D Sample">
+    <Grid>
+        <local:SkiaView x:Name="Surface" RenderFrame="OnPaintSurface" />
+        <Border Margin="12" Padding="10" Background="#66000000" CornerRadius="6" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Skia3D - pseudo 3D on SkiaSharp" FontSize="16" FontWeight="Bold" Foreground="White"/>
+                <TextBlock Text="Drag to orbit · Scroll to zoom" Foreground="White"/>
+                <StackPanel Spacing="4">
+                    <CheckBox x:Name="DepthToggle" Content="Depth buffer" IsChecked="True" Foreground="White" Click="OnOptionsChanged"/>
+                    <CheckBox x:Name="LightingToggle" Content="Lighting" IsChecked="True" Foreground="White" Click="OnOptionsChanged"/>
+                    <CheckBox x:Name="WireframeToggle" Content="Wireframe" IsChecked="False" Foreground="White" Click="OnOptionsChanged"/>
+                    <CheckBox x:Name="PauseToggle" Content="Pause animation" IsChecked="False" Foreground="White" Click="OnOptionsChanged"/>
+                    <StackPanel Spacing="2">
+                        <TextBlock x:Name="MeshPrecisionLabel" Text="Mesh precision: 24" Foreground="White"/>
+                        <Slider x:Name="MeshPrecisionSlider"
+                                Minimum="4"
+                                Maximum="64"
+                                Value="24"
+                                TickFrequency="4"
+                                SmallChange="1"
+                                LargeChange="4"
+                                ValueChanged="OnMeshPrecisionChanged"/>
+                    </StackPanel>
+                    <StackPanel Spacing="2">
+                        <TextBlock x:Name="SubdivisionLabel" Text="Path subdivision: 64" Foreground="White"/>
+                        <Slider x:Name="SubdivisionSlider"
+                                Minimum="4"
+                                Maximum="256"
+                                Value="64"
+                                TickFrequency="8"
+                                SmallChange="1"
+                                LargeChange="8"
+                                ValueChanged="OnSubdivisionChanged"/>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <Button Content="Load OBJ" Click="OnLoadObj" />
+                    <Button Content="Zoom Extents" Click="OnZoomExtents" />
+                    <Button Content="Clear Scene" Click="OnClearScene" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
