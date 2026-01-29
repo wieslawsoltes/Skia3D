@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.ViewportToolbarControl"
+             x:DataType="vm:EditorToolbarViewModel">
+    <Border Classes="MaxViewportToolbar" Padding="4">
+        <StackPanel Spacing="4">
+            <Button Classes="MaxToolStripButton" ToolTip.Tip="Zoom Extents" Command="{Binding Actions.ZoomExtentsCommand}">
+                <TextBlock Text="Z" Classes="MaxToolbarGlyph"/>
+            </Button>
+            <ToggleButton Classes="MaxToolStripButton" ToolTip.Tip="Grid" IsChecked="{Binding Options.GridEnabled, Mode=TwoWay}">
+                <TextBlock Text="G" Classes="MaxToolbarGlyph"/>
+            </ToggleButton>
+            <ToggleButton Classes="MaxToolStripButton" ToolTip.Tip="Wireframe" IsChecked="{Binding Options.WireframeEnabled, Mode=TwoWay}">
+                <TextBlock Text="W" Classes="MaxToolbarGlyph"/>
+            </ToggleButton>
+            <ToggleButton Classes="MaxToolStripButton" ToolTip.Tip="Lighting" IsChecked="{Binding Options.LightingEnabled, Mode=TwoWay}">
+                <TextBlock Text="L" Classes="MaxToolbarGlyph"/>
+            </ToggleButton>
+            <ToggleButton Classes="MaxToolStripButton" ToolTip.Tip="Pause" IsChecked="{Binding Options.PauseEnabled, Mode=TwoWay}">
+                <TextBlock Text="P" Classes="MaxToolbarGlyph"/>
+            </ToggleButton>
+        </StackPanel>
+    </Border>
+</UserControl>

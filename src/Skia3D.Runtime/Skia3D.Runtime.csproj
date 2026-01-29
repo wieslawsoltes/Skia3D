@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Skia3D.Core\Skia3D.Core.csproj" />
+    <ProjectReference Include="..\Skia3D.Scene\Skia3D.Scene.csproj" />
+    <ProjectReference Include="..\Skia3D.Rendering\Skia3D.Rendering.csproj" />
+  </ItemGroup>
+
+</Project>

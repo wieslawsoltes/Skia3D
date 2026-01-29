@@ -2,14 +2,23 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using Avalonia;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
-using Avalonia.Threading;
 using Avalonia.Controls.Primitives;
+using Avalonia.Threading;
+using Skia3D.Animation;
 using Skia3D.Core;
+using Skia3D.Editor;
+using Skia3D.Geometry;
+using Skia3D.IO;
+using Skia3D.Modeling;
+using Skia3D.Scene;
+using Skia3D.Sample.Services;
+using Skia3D.Sample.ViewModels;
+using Skia3D.Sample.Controls;
+using SceneGraph = Skia3D.Scene.Scene;
 using SkiaSharp;
 
 namespace Skia3D.Sample;
@@ -18,30 +27,58 @@ public partial class MainWindow : Window
 {
     private readonly Renderer3D _renderer = new();
     private readonly Camera _camera = new();
+    private readonly Camera _cameraTop = new();
+    private readonly Camera _cameraFront = new();
+    private readonly Camera _cameraLeft = new();
     private readonly OrbitCameraController _orbit;
-    private readonly List<MeshInstance> _scene = new();
-    private readonly List<MeshInstance> _userMeshes = new();
-    private readonly DispatcherTimer _timer;
+    private readonly OrbitCameraController _orbitTop;
+    private readonly OrbitCameraController _orbitFront;
+    private readonly OrbitCameraController _orbitLeft;
+    private SceneGraph _sceneGraph = new();
+    private readonly List<SceneNode> _userNodes = new();
+    private readonly EditorSession _editor = new();
+    private readonly MainWindowViewModel _viewModel;
+    private readonly EditorViewModel _editorViewModel;
+    private readonly EditorViewportService _viewportService;
+    private readonly EditorViewportService _viewportTopService;
+    private readonly EditorViewportService _viewportFrontService;
+    private readonly EditorViewportService _viewportLeftService;
+    private readonly ViewportManagerService _viewportManager;
+    private readonly CommandStateService _commandStateService;
+    private readonly MotionPanelService _motionService;
+    private readonly EditorOptionsService _optionsService;
+    private readonly MaterialGraphService _materialGraphService;
+    private readonly ConstraintPanelService _constraintService;
+    private readonly InspectorOptionsViewModel _optionsViewModel;
+    private readonly StatusHintService _statusHintService;
+    private EditorViewportControl? _viewportControlPerspective;
+    private EditorViewportControl? _viewportControlTop;
+    private EditorViewportControl? _viewportControlFront;
+    private EditorViewportControl? _viewportControlLeft;
+    private Popup? _quadMenuPopup;
+    private string? _scenePath;
+    private Texture2D? _checkerTexture;
     private const int DefaultMeshSegments = 24;
-    private MeshInstance? _ground;
+    private SceneNode? _groundNode;
+    private SceneNode? _cubeNode;
+    private SceneNode? _lightNode;
     private SKBitmap? _groundLabelAtlas;
-    private SkiaView? _surface;
-    private CheckBox? _depthToggle;
-    private CheckBox? _lightingToggle;
-    private CheckBox? _wireframeToggle;
-    private CheckBox? _pauseToggle;
-    private Slider? _meshPrecisionSlider;
-    private TextBlock? _meshPrecisionLabel;
-    private Slider? _subdivisionSlider;
-    private TextBlock? _subdivisionLabel;
-    private bool _isDragging;
-    private bool _isPanning;
-    private Point _lastPointer;
-    private float _angle;
+    private readonly HierarchyPanelService _hierarchyService;
+    private readonly Dictionary<SceneNode, bool> _visibilitySnapshot = new();
+    private bool _isolateActive;
 
     public MainWindow()
     {
         InitializeComponent();
+
+        _viewModel = new MainWindowViewModel(_editor);
+        _editorViewModel = _viewModel.Editor;
+        _optionsViewModel = _viewModel.CommandPanel.Options;
+        DataContext = _viewModel;
+        _editor.SelectionService.SelectionChanged += OnEditorSelectionChanged;
+        _editor.MeshEdits.SelectionChanged += OnEditorSelectionChanged;
+        _editor.MeshEdits.CommandStateChanged += OnEditorCommandStateChanged;
+        _editor.MeshEdits.MeshEdited += OnEditorMeshEdited;
 
         _orbit = new OrbitCameraController(_camera)
         {
@@ -51,99 +88,386 @@ public partial class MainWindow : Window
             Pitch = -0.5f
         };
 
+        _orbitTop = new OrbitCameraController(_cameraTop)
+        {
+            Radius = 8f,
+            Target = Vector3.Zero,
+            Yaw = -MathF.PI / 2f,
+            Pitch = MathF.PI / 2f
+        };
+        _orbitFront = new OrbitCameraController(_cameraFront)
+        {
+            Radius = 8f,
+            Target = Vector3.Zero,
+            Yaw = MathF.PI / 2f,
+            Pitch = 0f
+        };
+        _orbitLeft = new OrbitCameraController(_cameraLeft)
+        {
+            Radius = 8f,
+            Target = Vector3.Zero,
+            Yaw = MathF.PI,
+            Pitch = 0f
+        };
+
+        _viewportService = new EditorViewportService(_editor, _sceneGraph, _renderer, _camera, _orbit, _editorViewModel, _viewModel.StatusBar);
+        _viewportTopService = new EditorViewportService(_editor, _sceneGraph, _renderer, _cameraTop, _orbitTop, _editorViewModel, _viewModel.StatusBar);
+        _viewportFrontService = new EditorViewportService(_editor, _sceneGraph, _renderer, _cameraFront, _orbitFront, _editorViewModel, _viewModel.StatusBar);
+        _viewportLeftService = new EditorViewportService(_editor, _sceneGraph, _renderer, _cameraLeft, _orbitLeft, _editorViewModel, _viewModel.StatusBar);
+        _viewportManager = new ViewportManagerService();
+        _viewportManager.Register(_viewportService, makeActive: true);
+        _viewportManager.Register(_viewportTopService);
+        _viewportManager.Register(_viewportFrontService);
+        _viewportManager.Register(_viewportLeftService);
+        _viewportTopService.SetView(1);
+        _viewportFrontService.SetView(2);
+        _viewportLeftService.SetView(3);
+
+        _hierarchyService = new HierarchyPanelService(_editor, _viewportService, _viewModel.CommandPanel.Hierarchy);
+        _hierarchyService.SelectionApplied += OnEditorSelectionChanged;
+        _commandStateService = new CommandStateService(_editor, _viewModel.CommandPanel.Commands);
+        _motionService = new MotionPanelService(_viewportService, _viewModel.CommandPanel.Motion);
+        _optionsService = new EditorOptionsService(_editor, _renderer, _viewportManager, _optionsViewModel);
+        _materialGraphService = new MaterialGraphService(_editor, _viewModel.Material);
+        _constraintService = new ConstraintPanelService(_editor, _viewportService, _viewModel.CommandPanel.Constraints);
+        _optionsService.EditModeApplied += OnEditorSelectionChanged;
+        _statusHintService = new StatusHintService(this, _viewModel.StatusBar, _optionsViewModel);
+        _viewModel.Actions.Bind(new EditorActionHandlers
+        {
+            OpenSceneAsync = OpenSceneAsync,
+            LoadObjAsync = LoadObjAsync,
+            SaveSceneAsync = SaveSceneAsync,
+            SaveSceneAsAsync = SaveSceneAsAsync,
+            ZoomExtents = ZoomExtents,
+            IsolateSelection = IsolateSelection,
+            UnhideAll = UnhideAll,
+            RenameSelectionAsync = RenameSelectionAsync,
+            ClearScene = ClearSceneAndInvalidate,
+            Undo = Undo,
+            Redo = Redo,
+            ClearSelection = ClearSelection,
+            SelectEdgeLoop = SelectEdgeLoop,
+            SelectEdgeRing = SelectEdgeRing,
+            ExtrudeFaces = ExtrudeFaces,
+            BevelFaces = BevelFaces,
+            InsetFaces = InsetFaces,
+            LoopCutEdgeLoop = LoopCutEdgeLoop,
+            SplitEdge = SplitEdge,
+            BridgeEdges = BridgeEdges,
+            BridgeEdgeLoops = BridgeEdgeLoops,
+            DissolveEdge = DissolveEdge,
+            CollapseEdge = CollapseEdge,
+            MergeVertices = MergeVertices,
+            DissolveFaces = DissolveFaces,
+            WeldVertices = WeldVertices,
+            CleanupMesh = CleanupMesh,
+            SmoothMesh = SmoothMesh,
+            SimplifyMesh = SimplifyMesh,
+            NudgePosX = NudgePosX,
+            NudgeNegX = NudgeNegX,
+            PlanarUv = PlanarUv,
+            BoxUv = BoxUv,
+            NormalizeUv = NormalizeUv,
+            FlipU = FlipU,
+            FlipV = FlipV,
+            UnwrapUv = UnwrapUv,
+            PackUv = PackUv,
+            MarkUvSeams = MarkUvSeams,
+            ClearUvSeams = ClearUvSeams,
+            ClearAllUvSeams = ClearAllUvSeams,
+            SelectUvIsland = SelectUvIsland,
+            AssignUvGroup = AssignUvGroup,
+            ClearUvGroup = ClearUvGroup,
+            CenterPivot = CenterPivot,
+            ResetTransform = ResetTransform,
+            AnimationReset = AnimationReset
+        });
+
         BuildScene(DefaultMeshSegments);
         SetupGroundDecal();
         SetupProjectedPathSample();
 
-        AttachSurface();
+        AttachViewport();
         AttachControls();
-
-        _timer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(16)
-        };
-        _timer.Tick += (_, _) => Animate();
-        _timer.Start();
     }
 
-    private void AttachSurface()
+    protected override void OnClosed(EventArgs e)
     {
-        _surface = this.FindControl<SkiaView>("Surface");
-        if (_surface != null)
+        base.OnClosed(e);
+        if (_viewportControlPerspective != null)
         {
-            _surface.RenderFrame += OnPaintSurface;
-            _surface.PointerPressed += OnPointerPressed;
-            _surface.PointerReleased += OnPointerReleased;
-            _surface.PointerMoved += OnPointerMoved;
-            _surface.PointerWheelChanged += OnPointerWheelChanged;
+            _viewportControlPerspective.QuadMenuRequested -= OnQuadMenuRequested;
         }
+        if (_viewportControlTop != null)
+        {
+            _viewportControlTop.QuadMenuRequested -= OnQuadMenuRequested;
+        }
+        if (_viewportControlFront != null)
+        {
+            _viewportControlFront.QuadMenuRequested -= OnQuadMenuRequested;
+        }
+        if (_viewportControlLeft != null)
+        {
+            _viewportControlLeft.QuadMenuRequested -= OnQuadMenuRequested;
+        }
+        _hierarchyService.Dispose();
+        _motionService.Dispose();
+        _optionsService.Dispose();
+        _materialGraphService.Dispose();
+        _constraintService.Dispose();
+        _statusHintService.Dispose();
+        _viewportManager.Dispose();
+        _viewportService.Dispose();
+        _viewportTopService.Dispose();
+        _viewportFrontService.Dispose();
+        _viewportLeftService.Dispose();
+        _checkerTexture?.Dispose();
+    }
+
+    private void AttachViewport()
+    {
+        _viewportControlPerspective = this.FindControl<EditorViewportControl>("ViewportPerspective");
+        _viewportControlTop = this.FindControl<EditorViewportControl>("ViewportTop");
+        _viewportControlFront = this.FindControl<EditorViewportControl>("ViewportFront");
+        _viewportControlLeft = this.FindControl<EditorViewportControl>("ViewportLeft");
+        _quadMenuPopup = this.FindControl<Popup>("QuadMenuPopup");
+
+        if (_viewportControlPerspective != null)
+        {
+            _viewportControlPerspective.BindService(_viewportService);
+            _viewportControlPerspective.QuadMenuRequested += OnQuadMenuRequested;
+        }
+        if (_viewportControlTop != null)
+        {
+            _viewportControlTop.BindService(_viewportTopService);
+            _viewportControlTop.QuadMenuRequested += OnQuadMenuRequested;
+        }
+        if (_viewportControlFront != null)
+        {
+            _viewportControlFront.BindService(_viewportFrontService);
+            _viewportControlFront.QuadMenuRequested += OnQuadMenuRequested;
+        }
+        if (_viewportControlLeft != null)
+        {
+            _viewportControlLeft.BindService(_viewportLeftService);
+            _viewportControlLeft.QuadMenuRequested += OnQuadMenuRequested;
+        }
+    }
+
+    private void OnQuadMenuRequested(object? sender, EventArgs e)
+    {
+        if (_quadMenuPopup != null && sender is Control control)
+        {
+            _quadMenuPopup.PlacementTarget = control;
+        }
+
+        _viewModel.Actions.IsQuadMenuOpen = true;
     }
 
     private void AttachControls()
     {
-        _depthToggle = this.FindControl<CheckBox>("DepthToggle");
-        _lightingToggle = this.FindControl<CheckBox>("LightingToggle");
-        _wireframeToggle = this.FindControl<CheckBox>("WireframeToggle");
-        _pauseToggle = this.FindControl<CheckBox>("PauseToggle");
-        _meshPrecisionSlider = this.FindControl<Slider>("MeshPrecisionSlider");
-        _meshPrecisionLabel = this.FindControl<TextBlock>("MeshPrecisionLabel");
-        _subdivisionSlider = this.FindControl<Slider>("SubdivisionSlider");
-        _subdivisionLabel = this.FindControl<TextBlock>("SubdivisionLabel");
+        _optionsService.ApplyOptions();
+        _optionsService.ApplyEditOptions();
+        _optionsService.ApplyImportOptions();
+        _optionsService.ApplyModelingOptions();
+        _optionsService.ApplySelectionOptions();
+        _optionsService.ApplyViewportView();
+        _optionsService.ApplyNavigationMode();
+        _optionsService.Attach(RebuildSampleScene, DefaultMeshSegments);
+        _commandStateService.Refresh();
+        _motionService.Refresh();
+        _hierarchyService.Rebuild(_sceneGraph);
+        _constraintService.Rebuild(_sceneGraph);
+    }
 
-        ApplyOptions();
+    private SceneNode CreateRootNode(string name, Mesh mesh, Material material, Vector3 localPosition)
+    {
+        var node = new SceneNode(name)
+        {
+            MeshRenderer = new MeshRenderer(mesh, material)
+        };
+        node.Transform.LocalPosition = localPosition;
+        _sceneGraph.AddRoot(node);
+        return node;
+    }
+
+    private void RegisterInstance(SceneNode node)
+    {
+        _editor.Document.RegisterInstance(node);
+    }
+
+    private void RegisterEditable(SceneNode node)
+    {
+        _editor.Document.RegisterEditable(node);
+    }
+
+    private void RegisterSceneRecursive(SceneNode node)
+    {
+        _editor.Document.RegisterSceneRecursive(node);
+    }
+
+    private static MeshInstance? FindFirstInstance(SceneNode node)
+    {
+        if (node.MeshInstance != null)
+        {
+            return node.MeshInstance;
+        }
+
+        foreach (var child in node.Children)
+        {
+            var found = FindFirstInstance(child);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private void BuildScene(int meshSegments)
     {
-        _scene.Clear();
+        _sceneGraph = new SceneGraph();
+        for (int i = 0; i < _viewportManager.Viewports.Count; i++)
+        {
+            _viewportManager.Viewports[i].SceneGraph = _sceneGraph;
+        }
+        _editor.Document.Clear();
+        _groundNode = null;
+        _cubeNode = null;
+        _lightNode = null;
+
         var groundColor = new SKColor(115, 125, 135);
-        _ground = new MeshInstance(MeshFactory.CreateGrid(meshSegments, 12f, groundColor, twoSided: true))
+        var groundMesh = MeshFactory.CreateGrid(meshSegments, 12f, groundColor, twoSided: true);
+        _checkerTexture ??= Texture2D.CreateCheckerboard(256, 256, new SKColor(80, 85, 95), new SKColor(130, 140, 150), cells: 8);
+        var groundMaterial = new Material
         {
-            Transform = Matrix4x4.CreateTranslation(new Vector3(0f, -1.2f, 0f)),
-            Material = new Material { BaseColor = new SKColor(145, 155, 165), Ambient = 0.35f, Diffuse = 0.55f, DoubleSided = true }
+            BaseColor = SKColors.White,
+            BaseColorTexture = _checkerTexture,
+            BaseColorSampler = new TextureSampler { Filter = TextureFilter.Bilinear },
+            UvScale = new Vector2(4f, 4f),
+            ShadingModel = MaterialShadingModel.MetallicRoughness,
+            Metallic = 0.0f,
+            Roughness = 0.9f,
+            Ambient = 0.35f,
+            Diffuse = 0.55f,
+            DoubleSided = true,
+            UseVertexColor = false
         };
+        _groundNode = CreateRootNode("Ground", groundMesh, groundMaterial, new Vector3(0f, -1.2f, 0f));
+        RegisterInstance(_groundNode);
 
-        var cube = new MeshInstance(MeshFactory.CreateCube(2.4f, new SKColor(46, 153, 255)))
+        var cubeMesh = MeshFactory.CreateCube(2.4f, new SKColor(46, 153, 255));
+        var cubeMaterial = new Material
         {
-            Material = new Material { BaseColor = new SKColor(46, 153, 255), Diffuse = 1f, Ambient = 0.2f }
+            BaseColor = new SKColor(46, 153, 255),
+            Diffuse = 1f,
+            Ambient = 0.2f,
+            ShadingModel = MaterialShadingModel.MetallicRoughness,
+            Metallic = 0.85f,
+            Roughness = 0.25f
         };
+        _cubeNode = CreateRootNode("Cube", cubeMesh, cubeMaterial, Vector3.Zero);
+        RegisterEditable(_cubeNode);
 
-        var pyramid = new MeshInstance(MeshFactory.CreatePyramid(2f, 2.4f, new SKColor(255, 99, 71)))
+        var pyramidMesh = MeshFactory.CreatePyramid(2f, 2.4f, new SKColor(255, 99, 71));
+        var pyramidMaterial = new Material
         {
-            Transform = Matrix4x4.CreateTranslation(new Vector3(2.6f, 0f, -2.2f)),
-            Material = new Material { BaseColor = new SKColor(255, 140, 120), Diffuse = 1f, Ambient = 0.2f }
+            BaseColor = new SKColor(255, 140, 120),
+            Diffuse = 1f,
+            Ambient = 0.2f,
+            EmissiveColor = new SKColor(255, 120, 80),
+            EmissiveStrength = 0.12f
         };
+        var pyramidNode = CreateRootNode("Pyramid", pyramidMesh, pyramidMaterial, new Vector3(2.6f, 0f, -2.2f));
+        RegisterEditable(pyramidNode);
 
         var sphereSlices = Math.Max(8, meshSegments);
         var sphereStacks = Math.Max(6, meshSegments / 2);
-        var sphere = new MeshInstance(MeshFactory.CreateSphere(1.3f, sphereSlices, sphereStacks, new SKColor(80, 220, 180)))
+        var sphereMesh = MeshFactory.CreateSphere(1.3f, sphereSlices, sphereStacks, new SKColor(80, 220, 180));
+        var sphereMaterial = new Material
         {
-            Transform = Matrix4x4.CreateTranslation(new Vector3(-2.8f, 0.2f, 1.8f)),
-            Material = new Material { BaseColor = new SKColor(80, 220, 180), Ambient = 0.2f, Diffuse = 0.9f }
+            BaseColor = new SKColor(80, 220, 180),
+            Ambient = 0.2f,
+            Diffuse = 0.9f,
+            ShadingModel = MaterialShadingModel.MetallicRoughness,
+            Metallic = 0.15f,
+            Roughness = 0.7f
         };
+        var sphereNode = CreateRootNode("Sphere", sphereMesh, sphereMaterial, new Vector3(-2.8f, 0.2f, 1.8f));
+        RegisterEditable(sphereNode);
 
         var cylinderSegments = Math.Max(8, meshSegments);
-        var cylinder = new MeshInstance(MeshFactory.CreateCylinder(0.9f, 2.5f, cylinderSegments, new SKColor(200, 200, 120)))
+        var cylinderMesh = MeshFactory.CreateCylinder(0.9f, 2.5f, cylinderSegments, new SKColor(200, 200, 120));
+        var cylinderMaterial = new Material
         {
-            Transform = Matrix4x4.CreateTranslation(new Vector3(0f, 0f, -3f)),
-            Material = new Material { BaseColor = new SKColor(220, 220, 140), Ambient = 0.2f, Diffuse = 0.8f }
+            BaseColor = new SKColor(220, 220, 140),
+            Ambient = 0.2f,
+            Diffuse = 0.8f,
+            ShadingModel = MaterialShadingModel.MetallicRoughness,
+            Metallic = 0.6f,
+            Roughness = 0.4f
         };
+        var cylinderNode = CreateRootNode("Cylinder", cylinderMesh, cylinderMaterial, new Vector3(0f, 0f, -3f));
+        RegisterEditable(cylinderNode);
 
-        _scene.Add(_ground);
-        _scene.Add(cube);
-        _scene.Add(pyramid);
-        _scene.Add(sphere);
-        _scene.Add(cylinder);
-
-        foreach (var user in _userMeshes)
+        _lightNode = new SceneNode("Key Light")
         {
-            _scene.Add(user);
+            Light = new LightComponent(Light.Directional(new Vector3(-0.4f, -1f, -0.6f), new SKColor(255, 255, 255), 1f))
+        };
+        _sceneGraph.AddRoot(_lightNode);
+
+        foreach (var user in _userNodes)
+        {
+            _sceneGraph.AddRoot(user);
+            RegisterEditable(user);
         }
+
+        SetupSceneAnimation();
+        _sceneGraph.UpdateWorld(parallel: true);
+        _viewportManager.UpdateSceneLights();
+    }
+
+    private void SetupSceneAnimation()
+    {
+        if (_cubeNode is null)
+        {
+            _viewportService.AnimationPlayer = null;
+            _viewportService.AnimationMixer = null;
+            _viewportService.SpinNode = null;
+            return;
+        }
+
+        var spinClip = new AnimationClip("CubeSpin");
+        var spinTrack = new TransformTrack(_cubeNode.Name);
+        spinTrack.RotationKeys.Add(new Keyframe<Quaternion>(0f, Quaternion.Identity));
+        spinTrack.RotationKeys.Add(new Keyframe<Quaternion>(4f, Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 2f)));
+        spinClip.Tracks.Add(spinTrack);
+        spinClip.RecalculateDuration();
+
+        var bobClip = new AnimationClip("CubeBob");
+        var bobTrack = new TransformTrack(_cubeNode.Name);
+        var basePos = _cubeNode.Transform.LocalPosition;
+        bobTrack.TranslationKeys.Add(new Keyframe<Vector3>(0f, basePos));
+        bobTrack.TranslationKeys.Add(new Keyframe<Vector3>(1f, basePos + new Vector3(0f, 0.35f, 0f)));
+        bobTrack.TranslationKeys.Add(new Keyframe<Vector3>(2f, basePos));
+        bobClip.Tracks.Add(bobTrack);
+        bobClip.RecalculateDuration();
+
+        var spinPlayer = new AnimationPlayer(spinClip.Bind(_sceneGraph)) { Loop = true, IsPlaying = true };
+        var bobPlayer = new AnimationPlayer(bobClip.Bind(_sceneGraph)) { Loop = true, IsPlaying = true, Speed = 1f };
+
+        var mixer = new AnimationMixer();
+        mixer.AddLayer(spinPlayer, weight: 1f);
+        mixer.AddLayer(bobPlayer, weight: 0.6f);
+        _viewportService.AnimationMixer = mixer;
+        _viewportService.AnimationPlayer = null;
+        _viewportService.SpinNode = _cubeNode;
     }
 
     private void SetupGroundDecal()
     {
-        if (_ground is null)
+        if (_groundNode is null || _groundNode.MeshInstance is null)
         {
             return;
         }
@@ -195,7 +519,7 @@ public partial class MainWindow : Window
 
         _groundLabelAtlas = atlas.Atlas;
 
-        if (!DecalBuilder.TryCreatePlanarFrame(_ground.Transform, 1.4f, 0.9f, 3.6f, out var frame))
+        if (!DecalBuilder.TryCreatePlanarFrame(_groundNode.Transform.WorldMatrix, 1.4f, 0.9f, 3.6f, out var frame))
         {
             return;
         }
@@ -238,241 +562,612 @@ public partial class MainWindow : Window
         _renderer.AddProjectedPath(cornerLayout.Path, cornerPaint, cornerWorld);
     }
 
-    private void Animate()
+
+    protected override void OnKeyDown(KeyEventArgs e)
     {
-        if (_pauseToggle?.IsChecked == true)
+        base.OnKeyDown(e);
+
+        if (e.Handled)
         {
             return;
         }
 
-        _angle += 0.015f;
-        if (_scene.Count > 1)
+        var key = e.Key;
+        var modifiers = e.KeyModifiers;
+
+        if ((modifiers & KeyModifiers.Control) != 0)
         {
-            var rotation = Matrix4x4.CreateRotationY(_angle) * Matrix4x4.CreateRotationX(_angle * 0.3f);
-            _scene[1].Transform = rotation;
+            switch (key)
+            {
+                case Key.O:
+                    _viewModel.Actions.OpenSceneCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                case Key.Z:
+                    if ((modifiers & KeyModifiers.Shift) != 0)
+                    {
+                        _viewModel.Actions.RedoCommand.Execute(null);
+                    }
+                    else
+                    {
+                        _viewModel.Actions.UndoCommand.Execute(null);
+                    }
+                    e.Handled = true;
+                    return;
+                case Key.S:
+                    if ((modifiers & KeyModifiers.Shift) != 0)
+                    {
+                        _viewModel.Actions.SaveSceneAsCommand.Execute(null);
+                    }
+                    else
+                    {
+                        _viewModel.Actions.SaveSceneCommand.Execute(null);
+                    }
+                    e.Handled = true;
+                    return;
+                case Key.Y:
+                    _viewModel.Actions.RedoCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+            }
         }
 
-        _surface?.InvalidateVisual();
+        switch (key)
+        {
+            case Key.Escape:
+                _viewModel.Actions.ClearSelectionCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.F:
+                _viewModel.Actions.ZoomExtentsCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.G:
+                _optionsViewModel.ToggleGridCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.Q:
+                _optionsViewModel.SetSelectionToolCommand.Execute(0);
+                e.Handled = true;
+                break;
+            case Key.B:
+                _optionsViewModel.SetSelectionToolCommand.Execute(1);
+                e.Handled = true;
+                break;
+            case Key.V:
+                _optionsViewModel.SetSelectionToolCommand.Execute(2);
+                e.Handled = true;
+                break;
+            case Key.A:
+                _optionsViewModel.SetSelectionToolCommand.Execute(3);
+                e.Handled = true;
+                break;
+            case Key.X:
+                _optionsViewModel.ToggleSelectionCrossingCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.Z:
+                _optionsViewModel.ToggleWireframeCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.D:
+                _optionsViewModel.ToggleDepthCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.L:
+                _optionsViewModel.ToggleLightingCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.S:
+                _optionsViewModel.ToggleGizmoSnapCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.P:
+                _optionsViewModel.TogglePauseCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.W:
+                _optionsViewModel.SetGizmoModeCommand.Execute(0);
+                e.Handled = true;
+                break;
+            case Key.E:
+                _optionsViewModel.SetGizmoModeCommand.Execute(1);
+                e.Handled = true;
+                break;
+            case Key.R:
+                _optionsViewModel.SetGizmoModeCommand.Execute(2);
+                e.Handled = true;
+                break;
+            case Key.I:
+                _viewModel.Actions.ToggleCommandPanelCommand.Execute(null);
+                e.Handled = true;
+                break;
+            case Key.D1:
+            case Key.NumPad1:
+                _optionsViewModel.SetSelectionModeCommand.Execute(0);
+                e.Handled = true;
+                break;
+            case Key.D2:
+            case Key.NumPad2:
+                _optionsViewModel.SetSelectionModeCommand.Execute(1);
+                e.Handled = true;
+                break;
+            case Key.D3:
+            case Key.NumPad3:
+                _optionsViewModel.SetSelectionModeCommand.Execute(3);
+                e.Handled = true;
+                break;
+            case Key.D4:
+            case Key.NumPad4:
+                _optionsViewModel.SetSelectionModeCommand.Execute(2);
+                e.Handled = true;
+                break;
+        }
     }
 
-    private void OnPaintSurface(object? sender, SkiaRenderEventArgs e)
+
+    private void ClearSelection()
     {
-        var canvas = e.Surface.Canvas;
-        var info = e.Info;
-        var viewport = new SKRect(0, 0, info.Width, info.Height);
-        _renderer.Render(canvas, viewport, _camera, _scene);
+        _editor.Selection.ClearAll();
+        OnEditorSelectionChanged();
     }
 
-    private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
+    private void OnEditorSelectionChanged()
     {
-        _isDragging = true;
-        _isPanning = e.GetCurrentPoint(_surface).Properties.IsMiddleButtonPressed;
-        _lastPointer = e.GetPosition(_surface);
-        e.Pointer.Capture(_surface);
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(OnEditorSelectionChanged);
+            return;
+        }
+
+        _viewportManager.UpdateSelectedNodeFromEditor();
+        _editorViewModel.RefreshAll();
+        _commandStateService.Refresh();
+        _hierarchyService.Refresh();
+        _constraintService.Refresh();
+        _motionService.Refresh();
+        _viewportManager.InvalidateAll();
     }
 
-    private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
+    private void OnEditorCommandStateChanged()
     {
-        _isDragging = false;
-        _isPanning = false;
-        e.Pointer.Capture(null);
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(OnEditorCommandStateChanged);
+            return;
+        }
+
+        _editorViewModel.RefreshAll();
+        _commandStateService.Refresh();
+        _hierarchyService.Refresh();
+        _constraintService.Refresh();
+        _motionService.Refresh();
     }
 
-    private void OnPointerMoved(object? sender, PointerEventArgs e)
+    private void OnEditorMeshEdited()
     {
-        if (!_isDragging || _surface is null)
+        if (!Dispatcher.UIThread.CheckAccess())
+        {
+            Dispatcher.UIThread.Post(OnEditorMeshEdited);
+            return;
+        }
+
+        _viewportManager.InvalidateAll();
+    }
+
+    private void ZoomExtents()
+    {
+        _viewportManager.ActiveViewport.ZoomToExtents();
+        _viewportManager.ActiveViewport.Invalidate();
+    }
+
+    private void IsolateSelection()
+    {
+        var node = _viewportManager.ActiveViewport.SelectedNode;
+        if (node == null)
         {
             return;
         }
 
-        var current = e.GetPosition(_surface);
-        var delta = current - _lastPointer;
-        _lastPointer = current;
+        if (_isolateActive)
+        {
+            RestoreVisibilitySnapshot();
+        }
 
-        if (_isPanning)
+        var visibleNodes = new HashSet<SceneNode>();
+        CollectNodeAndChildren(node, visibleNodes);
+
+        _visibilitySnapshot.Clear();
+        foreach (var current in EnumerateSceneNodes(_sceneGraph))
         {
-            PanWithPixels(delta);
+            var renderer = current.MeshRenderer;
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            _visibilitySnapshot[current] = renderer.IsVisible;
+            renderer.IsVisible = visibleNodes.Contains(current);
         }
-        else
-        {
-            const float sensitivity = 0.01f;
-            _orbit.Rotate((float)delta.X * sensitivity, (float)delta.Y * sensitivity);
-        }
-        _surface.InvalidateVisual();
+
+        _isolateActive = true;
+        _viewportManager.InvalidateAll();
+        _hierarchyService.Refresh();
     }
 
-    private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
+    private void UnhideAll()
     {
-        const float zoomSpeed = 0.5f;
-        var delta = -(float)e.Delta.Y * zoomSpeed;
-
-        if (_surface is null)
+        if (_isolateActive)
         {
-            _orbit.Zoom(delta);
-            _surface?.InvalidateVisual();
+            RestoreVisibilitySnapshot();
+            _viewportManager.InvalidateAll();
+            _hierarchyService.Refresh();
             return;
         }
 
-        var bounds = _surface.Bounds;
-        var viewportSize = new Vector2((float)bounds.Width, (float)bounds.Height);
-        var cursor = e.GetPosition(_surface);
+        foreach (var current in EnumerateSceneNodes(_sceneGraph))
+        {
+            var renderer = current.MeshRenderer;
+            if (renderer != null)
+            {
+                renderer.IsVisible = true;
+            }
+        }
 
-        if (viewportSize.X <= 0f || viewportSize.Y <= 0f)
-        {
-            _orbit.Zoom(delta);
-        }
-        else
-        {
-            _camera.AspectRatio = viewportSize.X / viewportSize.Y;
-            _orbit.ZoomToScreenPoint(new Vector2((float)cursor.X, (float)cursor.Y), viewportSize, delta);
-        }
-        _surface?.InvalidateVisual();
+        _viewportManager.InvalidateAll();
+        _hierarchyService.Refresh();
     }
 
-    private void PanWithPixels(Avalonia.Vector delta)
+    private async Task RenameSelectionAsync()
     {
-        var viewportSize = _surface is null
-            ? new Vector2(0f, 0f)
-            : new Vector2((float)_surface.Bounds.Width, (float)_surface.Bounds.Height);
-
-        if (viewportSize.X <= 0f || viewportSize.Y <= 0f)
+        var node = _viewportManager.ActiveViewport.SelectedNode;
+        if (node == null)
         {
-            const float fallback = 0.01f;
-            _orbit.Pan(new Vector2((float)(delta.X * fallback), (float)(delta.Y * fallback)));
             return;
         }
 
-        _camera.AspectRatio = viewportSize.X / viewportSize.Y;
-        var dist = _orbit.Radius;
-        var vfov = _camera.FieldOfView;
-        var worldPerPixelY = (2f * dist * MathF.Tan(vfov * 0.5f)) / viewportSize.Y;
-        var worldPerPixelX = worldPerPixelY * (_camera.AspectRatio <= 0f ? 1f : _camera.AspectRatio);
+        var newName = await PromptRenameAsync(node.Name);
+        if (string.IsNullOrWhiteSpace(newName))
+        {
+            return;
+        }
 
-        var pan = new Vector2((float)(delta.X * worldPerPixelX), (float)(delta.Y * worldPerPixelY));
-        _orbit.Pan(pan);
+        newName = newName.Trim();
+        if (string.Equals(newName, node.Name, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        node.Name = newName;
+        _hierarchyService.UpdateNodeName(node);
+        _hierarchyService.Refresh();
     }
 
-    private void OnOptionsChanged(object? sender, RoutedEventArgs e)
+    private async Task<string?> PromptRenameAsync(string currentName)
     {
-        ApplyOptions();
-        _surface?.InvalidateVisual();
+        var nameBox = new TextBox
+        {
+            Text = currentName,
+            MinWidth = 220
+        };
+
+        var okButton = new Button
+        {
+            Content = "Rename",
+            Width = 80
+        };
+        var cancelButton = new Button
+        {
+            Content = "Cancel",
+            Width = 80
+        };
+
+        var buttonRow = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 8,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Right
+        };
+        buttonRow.Children.Add(okButton);
+        buttonRow.Children.Add(cancelButton);
+
+        var panel = new StackPanel
+        {
+            Spacing = 10,
+            Margin = new Avalonia.Thickness(12)
+        };
+        panel.Children.Add(new TextBlock { Text = "New name" });
+        panel.Children.Add(nameBox);
+        panel.Children.Add(buttonRow);
+
+        var dialog = new Window
+        {
+            Title = "Rename Node",
+            Width = 320,
+            Height = 160,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Content = panel
+        };
+
+        okButton.Click += (_, _) => dialog.Close(nameBox.Text?.Trim());
+        cancelButton.Click += (_, _) => dialog.Close(null);
+
+        return await dialog.ShowDialog<string?>(this);
     }
 
-    private void OnZoomExtents(object? sender, RoutedEventArgs e)
+    private void RestoreVisibilitySnapshot()
     {
-        ZoomToExtents();
-        _surface?.InvalidateVisual();
+        foreach (var (node, visible) in _visibilitySnapshot)
+        {
+            var renderer = node.MeshRenderer;
+            if (renderer != null)
+            {
+                renderer.IsVisible = visible;
+            }
+        }
+
+        _visibilitySnapshot.Clear();
+        _isolateActive = false;
     }
 
-    private void OnClearScene(object? sender, RoutedEventArgs e)
+    private static void CollectNodeAndChildren(SceneNode node, HashSet<SceneNode> nodes)
+    {
+        if (!nodes.Add(node))
+        {
+            return;
+        }
+
+        foreach (var child in node.Children)
+        {
+            CollectNodeAndChildren(child, nodes);
+        }
+    }
+
+    private static IEnumerable<SceneNode> EnumerateSceneNodes(SceneGraph scene)
+    {
+        foreach (var root in scene.Roots)
+        {
+            foreach (var node in EnumerateSceneNodes(root))
+            {
+                yield return node;
+            }
+        }
+    }
+
+    private static IEnumerable<SceneNode> EnumerateSceneNodes(SceneNode node)
+    {
+        yield return node;
+        foreach (var child in node.Children)
+        {
+            foreach (var descendant in EnumerateSceneNodes(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
+    private void ClearSceneAndInvalidate()
     {
         ClearScene();
-        _surface?.InvalidateVisual();
+        _viewportManager.InvalidateAll();
     }
 
-    private void OnMeshPrecisionChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    private void Undo()
     {
-        var segments = GetMeshSegments();
-        UpdateMeshPrecisionLabel(segments);
-        RebuildSampleScene(segments);
-    }
-
-    private void ApplyOptions()
-    {
-        _renderer.UseDepthBuffer = _depthToggle?.IsChecked ?? true;
-        _renderer.EnableLighting = _lightingToggle?.IsChecked ?? true;
-        _renderer.ShowWireframe = _wireframeToggle?.IsChecked ?? false;
-
-        if (_meshPrecisionSlider != null)
+        if (_editor.MeshEdits.Undo())
         {
-            var segments = GetMeshSegments();
-            UpdateMeshPrecisionLabel(segments);
-        }
-
-        if (_subdivisionSlider != null)
-        {
-            var samples = (int)MathF.Round((float)_subdivisionSlider.Value);
-            samples = Math.Clamp(samples, 4, 512);
-            _renderer.ProjectedPathSamples = samples;
-            UpdateSubdivisionLabel(samples);
+            _editorViewModel.RefreshAll();
+            _commandStateService.Refresh();
+            _hierarchyService.Refresh();
+            _constraintService.Refresh();
+            _motionService.Refresh();
+            _viewportManager.InvalidateAll();
         }
     }
 
-    private void OnSubdivisionChanged(object? sender, RangeBaseValueChangedEventArgs e)
+    private void Redo()
     {
-        ApplyOptions();
-        _surface?.InvalidateVisual();
+        if (_editor.MeshEdits.Redo())
+        {
+            _editorViewModel.RefreshAll();
+            _commandStateService.Refresh();
+            _hierarchyService.Refresh();
+            _constraintService.Refresh();
+            _motionService.Refresh();
+            _viewportManager.InvalidateAll();
+        }
     }
 
-    private void UpdateSubdivisionLabel(int samples)
+    private void CenterPivot()
     {
-        if (_subdivisionLabel != null)
+        if (_editor.MeshEdits.CenterPivot())
         {
-            _subdivisionLabel.Text = $"Path subdivision: {samples}";
+            _viewportManager.InvalidateAll();
         }
     }
 
-    private void ZoomToExtents()
+    private void ResetTransform()
     {
-        if (_surface is { Bounds.Width: > 0, Bounds.Height: > 0 })
+        if (_editor.MeshEdits.ResetTransform())
         {
-            _camera.AspectRatio = (float)_surface.Bounds.Width / (float)_surface.Bounds.Height;
+            _viewportManager.InvalidateAll();
         }
+    }
 
-        if (_scene.Count == 0)
+    private void AnimationReset()
+    {
+        _motionService.Reset();
+    }
+
+    private void NudgePosX()
+    {
+        _editor.MeshEdits.ApplyTransformEdit(Matrix4x4.CreateTranslation(new Vector3(_editor.MeshEdits.NudgeStep, 0f, 0f)), "Nudge +X");
+        _viewportManager.InvalidateAll();
+    }
+
+    private void NudgeNegX()
+    {
+        _editor.MeshEdits.ApplyTransformEdit(Matrix4x4.CreateTranslation(new Vector3(-_editor.MeshEdits.NudgeStep, 0f, 0f)), "Nudge -X");
+        _viewportManager.InvalidateAll();
+    }
+
+    private void ExtrudeFaces()
+    {
+        _editor.MeshEdits.ExtrudeFaces();
+    }
+
+    private void BevelFaces()
+    {
+        _editor.MeshEdits.BevelFaces();
+    }
+
+    private void InsetFaces()
+    {
+        _editor.MeshEdits.InsetFaces();
+    }
+
+    private void SplitEdge()
+    {
+        _editor.MeshEdits.SplitEdge();
+    }
+
+    private void BridgeEdges()
+    {
+        _editor.MeshEdits.BridgePickedEdges();
+    }
+
+    private void BridgeEdgeLoops()
+    {
+        _editor.MeshEdits.BridgeEdgeLoops();
+    }
+
+    private void MergeVertices()
+    {
+        _editor.MeshEdits.MergeVertices();
+    }
+
+    private void DissolveFaces()
+    {
+        _editor.MeshEdits.DissolveFaces();
+    }
+
+    private void DissolveEdge()
+    {
+        _editor.MeshEdits.DissolvePickedEdge();
+    }
+
+    private void CollapseEdge()
+    {
+        _editor.MeshEdits.CollapsePickedEdge();
+    }
+
+    private void LoopCutEdgeLoop()
+    {
+        _editor.MeshEdits.LoopCutEdgeLoop();
+    }
+
+    private void WeldVertices()
+    {
+        _editor.MeshEdits.WeldVertices();
+    }
+
+    private void CleanupMesh()
+    {
+        _editor.MeshEdits.CleanupMesh();
+    }
+
+    private void SmoothMesh()
+    {
+        _editor.MeshEdits.SmoothMesh();
+    }
+
+    private void SimplifyMesh()
+    {
+        _editor.MeshEdits.SimplifyMesh();
+    }
+
+    private void PlanarUv()
+    {
+        _editor.MeshEdits.PlanarUv();
+    }
+
+    private void BoxUv()
+    {
+        _editor.MeshEdits.BoxUv();
+    }
+
+    private void NormalizeUv()
+    {
+        _editor.MeshEdits.NormalizeUv();
+    }
+
+    private void FlipU()
+    {
+        _editor.MeshEdits.FlipU();
+    }
+
+    private void FlipV()
+    {
+        _editor.MeshEdits.FlipV();
+    }
+
+    private void UnwrapUv()
+    {
+        _editor.MeshEdits.UnwrapUv();
+    }
+
+    private void PackUv()
+    {
+        _editor.MeshEdits.PackUv();
+    }
+
+    private void MarkUvSeams()
+    {
+        _editor.MeshEdits.MarkUvSeams();
+    }
+
+    private void ClearUvSeams()
+    {
+        _editor.MeshEdits.ClearUvSeams();
+    }
+
+    private void ClearAllUvSeams()
+    {
+        _editor.MeshEdits.ClearAllUvSeams();
+    }
+
+    private void SelectUvIsland()
+    {
+        if (_editor.MeshEdits.SelectUvIsland())
         {
-            _orbit.Target = Vector3.Zero;
-            _orbit.Radius = 8f;
-            _orbit.UpdateCamera();
-            return;
+            _optionsService.SyncEditModeToggles();
         }
+    }
 
-        var min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
-        var max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
-        bool any = false;
+    private void AssignUvGroup(int groupId)
+    {
+        _editor.MeshEdits.AssignUvGroup(groupId);
+    }
 
-        foreach (var instance in _scene)
+    private void ClearUvGroup()
+    {
+        _editor.MeshEdits.ClearUvGroup();
+    }
+
+    private void SelectEdgeLoop()
+    {
+        if (_editor.MeshEdits.SelectEdgeLoop())
         {
-            if (instance is null || !instance.IsVisible)
-            {
-                continue;
-            }
-
-            if (!TryComputeBounds(instance, out var bMin, out var bMax))
-            {
-                continue;
-            }
-
-            min = Vector3.Min(min, bMin);
-            max = Vector3.Max(max, bMax);
-            any = true;
+            _optionsService.SyncEditModeToggles();
         }
+    }
 
-        if (!any)
+    private void SelectEdgeRing()
+    {
+        if (_editor.MeshEdits.SelectEdgeRing())
         {
-            _orbit.Target = Vector3.Zero;
-            _orbit.Radius = 8f;
-            _orbit.UpdateCamera();
-            return;
+            _optionsService.SyncEditModeToggles();
         }
-
-        var centerBounds = (min + max) * 0.5f;
-        var halfSize = (max - min) * 0.5f;
-        var extentRadius = halfSize.Length();
-        if (extentRadius < 1e-3f)
-        {
-            extentRadius = 0.5f;
-        }
-
-        var halfVFov = MathF.Max(0.01f, _camera.FieldOfView * 0.5f);
-        var halfHFov = MathF.Atan(MathF.Tan(halfVFov) * (_camera.AspectRatio <= 0f ? 1f : _camera.AspectRatio));
-        var distV = extentRadius / MathF.Tan(halfVFov);
-        var distH = extentRadius / MathF.Tan(MathF.Max(0.01f, halfHFov));
-        var distance = MathF.Max(distV, distH) * 1.2f;
-
-        _orbit.Target = centerBounds;
-        _orbit.Radius = Math.Max(0.5f, distance);
-        _orbit.UpdateCamera();
     }
 
     private void ClearScene()
@@ -483,28 +1178,262 @@ public partial class MainWindow : Window
 
         _groundLabelAtlas?.Dispose();
         _groundLabelAtlas = null;
-        _ground = null;
+        _groundNode = null;
+        _cubeNode = null;
+        _lightNode = null;
+        _visibilitySnapshot.Clear();
+        _isolateActive = false;
+        _scenePath = null;
 
-        _scene.Clear();
-        _userMeshes.Clear();
-        _angle = 0f;
+        _sceneGraph = new SceneGraph();
+        for (int i = 0; i < _viewportManager.Viewports.Count; i++)
+        {
+            _viewportManager.Viewports[i].SceneGraph = _sceneGraph;
+        }
+        _userNodes.Clear();
+        _editor.Document.Clear();
+        _viewportManager.ResetState();
+        _viewportService.SpinNode = null;
+        _editor.Selection.ClearAll();
+        _editor.MeshEdits.ClearCommands();
+        OnEditorSelectionChanged();
 
         _orbit.Target = Vector3.Zero;
         _orbit.Radius = 8f;
         _orbit.Yaw = -0.7f;
         _orbit.Pitch = -0.5f;
         _orbit.UpdateCamera();
+
+        _hierarchyService.Rebuild(_sceneGraph);
+        _constraintService.Rebuild(_sceneGraph);
     }
 
-    private async void OnLoadObj(object? sender, RoutedEventArgs e)
+    private async Task OpenSceneAsync()
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = "Load OBJ",
+            Title = "Open Scene",
             AllowMultiple = false,
             FileTypeFilter = new List<FilePickerFileType>
             {
+                new FilePickerFileType("Skia3D Scene") { Patterns = new List<string> { "*.skia3d" } },
+                new FilePickerFileType("JSON") { Patterns = new List<string> { "*.json" } },
+                new FilePickerFileType("All files") { Patterns = new List<string> { "*" } }
+            }
+        });
+
+        if (files is null || files.Count == 0)
+        {
+            return;
+        }
+
+        var file = files[0];
+        try
+        {
+            string json;
+            var localPath = file.TryGetLocalPath();
+            if (!string.IsNullOrWhiteSpace(localPath))
+            {
+                json = await File.ReadAllTextAsync(localPath);
+                _scenePath = localPath;
+            }
+            else
+            {
+                await using var stream = await file.OpenReadAsync();
+                using var reader = new StreamReader(stream);
+                json = await reader.ReadToEndAsync();
+                _scenePath = null;
+            }
+
+            var scene = ScenePackageSerializer.FromJson(json, out var assets);
+
+            _renderer.ClearDecals();
+            _renderer.ClearProjectedPaths();
+            _renderer.ClearOverlays();
+            _groundLabelAtlas?.Dispose();
+            _groundLabelAtlas = null;
+            _groundNode = null;
+            _cubeNode = null;
+            _lightNode = null;
+            _visibilitySnapshot.Clear();
+            _isolateActive = false;
+
+            _sceneGraph = scene;
+            for (int i = 0; i < _viewportManager.Viewports.Count; i++)
+            {
+                _viewportManager.Viewports[i].SceneGraph = _sceneGraph;
+            }
+
+            _userNodes.Clear();
+            _editor.Document.Clear();
+            foreach (var root in _sceneGraph.Roots)
+            {
+                RegisterSceneRecursive(root);
+            }
+
+            ApplyMeshMetadata(assets);
+
+            _editor.Selection.ClearAll();
+            _editor.MeshEdits.ClearCommands();
+            _viewportService.AnimationMixer = null;
+            _viewportService.AnimationPlayer = null;
+            _viewportService.SpinNode = null;
+
+            OnEditorSelectionChanged();
+            _hierarchyService.Rebuild(_sceneGraph);
+            _constraintService.Rebuild(_sceneGraph);
+            _viewportManager.UpdateSceneLights();
+            _viewportManager.InvalidateAll();
+        }
+        catch (Exception ex)
+        {
+            await new Window { Content = new TextBlock { Text = $"Failed to open scene: {ex.Message}" }, Width = 420, Height = 120 }.ShowDialog(this);
+        }
+    }
+
+    private async Task SaveSceneAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_scenePath))
+        {
+            await SaveSceneAsAsync();
+            return;
+        }
+
+        await SaveSceneToPathAsync(_scenePath);
+    }
+
+    private async Task SaveSceneAsAsync()
+    {
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Save Scene",
+            SuggestedFileName = "scene.skia3d",
+            FileTypeChoices = new List<FilePickerFileType>
+            {
+                new FilePickerFileType("Skia3D Scene") { Patterns = new List<string> { "*.skia3d" } },
+                new FilePickerFileType("JSON") { Patterns = new List<string> { "*.json" } }
+            }
+        });
+
+        if (file is null)
+        {
+            return;
+        }
+
+        var json = BuildSceneJson();
+        var localPath = file.TryGetLocalPath();
+        if (!string.IsNullOrWhiteSpace(localPath))
+        {
+            await File.WriteAllTextAsync(localPath, json);
+            _scenePath = localPath;
+            return;
+        }
+
+        await using var stream = await file.OpenWriteAsync();
+        using var writer = new StreamWriter(stream);
+        await writer.WriteAsync(json);
+        await writer.FlushAsync();
+        _scenePath = null;
+    }
+
+    private async Task SaveSceneToPathAsync(string path)
+    {
+        var json = BuildSceneJson();
+        await File.WriteAllTextAsync(path, json);
+    }
+
+    private string BuildSceneJson()
+    {
+        var edits = BuildMeshEditData();
+        return ScenePackageSerializer.ToJson(_sceneGraph, mesh => edits.TryGetValue(mesh, out var data) ? data : null);
+    }
+
+    private Dictionary<Mesh, MeshEditData> BuildMeshEditData()
+    {
+        var edits = new Dictionary<Mesh, MeshEditData>();
+        foreach (var pair in _editor.Document.EditableMeshes)
+        {
+            var mesh = pair.Key.Mesh;
+            if (mesh == null)
+            {
+                continue;
+            }
+
+            var editable = pair.Value;
+            EdgeData[]? seams = null;
+            if (editable.SeamEdges.Count > 0)
+            {
+                seams = new EdgeData[editable.SeamEdges.Count];
+                int index = 0;
+                foreach (var edge in editable.SeamEdges)
+                {
+                    seams[index++] = new EdgeData(edge.A, edge.B);
+                }
+            }
+
+            int[]? faceGroups = null;
+            if (editable.UvFaceGroups.Count > 0)
+            {
+                faceGroups = editable.UvFaceGroups.ToArray();
+            }
+
+            edits[mesh] = new MeshEditData
+            {
+                SeamEdges = seams,
+                UvFaceGroups = faceGroups
+            };
+        }
+
+        return edits;
+    }
+
+    private void ApplyMeshMetadata(ScenePackageAssetLibrary assets)
+    {
+        foreach (var pair in _editor.Document.EditableMeshes)
+        {
+            var mesh = pair.Key.Mesh;
+            if (mesh == null)
+            {
+                continue;
+            }
+
+            if (!assets.MeshMetadata.TryGetValue(mesh, out var data))
+            {
+                continue;
+            }
+
+            var editable = pair.Value;
+            if (data.SeamEdges != null)
+            {
+                editable.SeamEdges.Clear();
+                foreach (var edge in data.SeamEdges)
+                {
+                    editable.SeamEdges.Add(new EdgeKey(edge.A, edge.B));
+                }
+            }
+
+            if (data.UvFaceGroups != null && data.UvFaceGroups.Length == editable.TriangleCount)
+            {
+                editable.UvFaceGroups.Clear();
+                editable.UvFaceGroups.AddRange(data.UvFaceGroups);
+            }
+
+            editable.EnsureUvFaceGroups();
+        }
+    }
+
+    private async Task LoadObjAsync()
+    {
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Load Mesh",
+            AllowMultiple = false,
+            FileTypeFilter = new List<FilePickerFileType>
+            {
+                new FilePickerFileType("Mesh files") { Patterns = new List<string> { "*.obj", "*.ply", "*.gltf", "*.glb" } },
                 new FilePickerFileType("OBJ") { Patterns = new List<string> { "*.obj" } },
+                new FilePickerFileType("PLY") { Patterns = new List<string> { "*.ply" } },
+                new FilePickerFileType("glTF") { Patterns = new List<string> { "*.gltf", "*.glb" } },
                 new FilePickerFileType("All files") { Patterns = new List<string> { "*" } }
             }
         });
@@ -518,73 +1447,76 @@ public partial class MainWindow : Window
         try
         {
             await using var stream = await file.OpenReadAsync();
-            using var reader = new StreamReader(stream);
-            var text = await reader.ReadToEndAsync();
-            var mesh = MeshFactory.LoadObj(text, new SKColor(200, 200, 200));
-            var instance = new MeshInstance(mesh)
+            if (stream.CanSeek)
             {
-                Material = new Material { BaseColor = new SKColor(200, 200, 200), Diffuse = 0.9f, Ambient = 0.15f }
+                stream.Seek(0, SeekOrigin.Begin);
+            }
+
+            _optionsService.ApplyImportOptions();
+            var processing = _optionsService.BuildImportOptions();
+
+            var meshOptions = new MeshLoadOptions
+            {
+                DefaultColor = new SKColor(200, 200, 200),
+                GenerateNormals = true,
+                Processing = processing
             };
-            _scene.Add(instance);
-            _userMeshes.Add(instance);
-            _surface?.InvalidateVisual();
+            var localPath = file.TryGetLocalPath();
+            if (!string.IsNullOrWhiteSpace(localPath))
+            {
+                meshOptions.SourcePath = localPath;
+            }
+            var extension = Path.GetExtension(file.Name);
+            if (string.IsNullOrWhiteSpace(extension))
+            {
+                extension = ".obj";
+            }
+
+            var sceneOptions = new SceneLoadOptions
+            {
+                MeshOptions = meshOptions,
+                LoadMaterials = true,
+                LoadAnimations = true
+            };
+
+            var import = SceneIo.Load(stream, extension, sceneOptions);
+            var root = new SceneNode($"Import: {file.Name}");
+            foreach (var node in import.Scene.Roots)
+            {
+                root.AddChild(node);
+            }
+
+            _sceneGraph.AddRoot(root);
+            _userNodes.Add(root);
+            RegisterSceneRecursive(root);
+
+            _editor.Selection.ClearAll();
+            _editor.MeshEdits.ClearCommands();
+            var selected = FindFirstInstance(root);
+            if (selected != null)
+            {
+                _editor.Selection.ObjectSelection.Add(selected);
+                _editor.Selection.Selected = selected;
+            }
+
+            _viewportService.AnimationMixer = null;
+            _viewportService.AnimationPlayer = null;
+            _viewportService.SpinNode = null;
+            if (import.Animations.Count > 0)
+            {
+                var clip = import.Animations[0];
+                _viewportService.AnimationPlayer = new AnimationPlayer(clip.Bind(_sceneGraph)) { Loop = true, IsPlaying = true };
+            }
+
+            _scenePath = null;
+            OnEditorSelectionChanged();
+            _hierarchyService.Rebuild(_sceneGraph);
+            _constraintService.Rebuild(_sceneGraph);
+            _viewportManager.InvalidateAll();
         }
         catch (Exception ex)
         {
-            await new Window { Content = new TextBlock { Text = $"Failed to load OBJ: {ex.Message}" }, Width = 400, Height = 120 }.ShowDialog(this);
-        }
-    }
-
-    private static (Vector3 center, float radius) ComputeBoundingSphere(MeshInstance instance)
-    {
-        if (!Matrix4x4.Decompose(instance.Transform, out var scale, out _, out var translation))
-        {
-            return (new Vector3(instance.Transform.M41, instance.Transform.M42, instance.Transform.M43), instance.Mesh.BoundingRadius);
-        }
-
-        var maxScale = Math.Max(scale.X, Math.Max(scale.Y, scale.Z));
-        var radius = instance.Mesh.BoundingRadius * (maxScale > 0f ? maxScale : 1f);
-        return (translation, radius);
-    }
-
-    private static bool TryComputeBounds(MeshInstance instance, out Vector3 min, out Vector3 max)
-    {
-        var verts = instance.Mesh.Vertices;
-        if (verts.Count == 0)
-        {
-            min = max = default;
-            return false;
-        }
-
-        min = new Vector3(float.PositiveInfinity, float.PositiveInfinity, float.PositiveInfinity);
-        max = new Vector3(float.NegativeInfinity, float.NegativeInfinity, float.NegativeInfinity);
-
-        foreach (var v in verts)
-        {
-            var p = Vector3.Transform(v.Position, instance.Transform);
-            min = Vector3.Min(min, p);
-            max = Vector3.Max(max, p);
-        }
-
-        return true;
-    }
-
-    private int GetMeshSegments()
-    {
-        if (_meshPrecisionSlider == null)
-        {
-            return DefaultMeshSegments;
-        }
-
-        var segments = (int)MathF.Round((float)_meshPrecisionSlider.Value);
-        return Math.Clamp(segments, 4, 128);
-    }
-
-    private void UpdateMeshPrecisionLabel(int segments)
-    {
-        if (_meshPrecisionLabel != null)
-        {
-            _meshPrecisionLabel.Text = $"Mesh precision: {segments}";
+            await new Window { Content = new TextBlock { Text = $"Failed to load scene: {ex.Message}" }, Width = 400, Height = 120 }.ShowDialog(this);
         }
     }
 
@@ -593,6 +1525,12 @@ public partial class MainWindow : Window
         BuildScene(meshSegments);
         SetupGroundDecal();
         SetupProjectedPathSample();
-        _surface?.InvalidateVisual();
+        _scenePath = null;
+        _editor.Selection.ClearAll();
+        _editor.MeshEdits.ClearCommands();
+        OnEditorSelectionChanged();
+        _hierarchyService.Rebuild(_sceneGraph);
+        _constraintService.Rebuild(_sceneGraph);
+        _viewportManager.InvalidateAll();
     }
 }

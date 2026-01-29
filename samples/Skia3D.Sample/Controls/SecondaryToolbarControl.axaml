@@ -1,0 +1,66 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.SecondaryToolbarControl"
+             x:DataType="vm:EditorToolbarViewModel">
+    <Border Classes="MaxToolbarSecondary">
+        <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="Selection" Classes="MaxToolbarLabel" VerticalAlignment="Center"/>
+                <ComboBox Classes="MaxToolbarCombo" Width="90" SelectedIndex="{Binding Options.SelectionToolIndex, Mode=TwoWay}">
+                    <ComboBoxItem Content="Click"/>
+                    <ComboBoxItem Content="Box"/>
+                    <ComboBoxItem Content="Paint"/>
+                    <ComboBoxItem Content="Lasso"/>
+                </ComboBox>
+                <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Crossing" IsChecked="{Binding Options.SelectionCrossing, Mode=TwoWay}">
+                    <TextBlock Text="X" Classes="MaxToolbarGlyph"/>
+                </ToggleButton>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                <Border Classes="MaxToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Sub-Object" Classes="MaxToolbarLabel"/>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Object" IsChecked="{Binding Options.EditMode, Mode=TwoWay}">
+                            <TextBlock Text="1" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Vertex" IsChecked="{Binding Options.VertexMode, Mode=TwoWay}" IsEnabled="{Binding Options.EditMode}">
+                            <TextBlock Text="2" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Edge" IsChecked="{Binding Options.EdgeMode, Mode=TwoWay}" IsEnabled="{Binding Options.EditMode}">
+                            <TextBlock Text="3" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Face" IsChecked="{Binding Options.FaceMode, Mode=TwoWay}" IsEnabled="{Binding Options.EditMode}">
+                            <TextBlock Text="4" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+                <Border Classes="MaxToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Snaps" Classes="MaxToolbarLabel"/>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Snap" IsChecked="{Binding Options.GizmoSnapEnabled, Mode=TwoWay}">
+                            <TextBlock Text="S" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Axis Lock" IsChecked="{Binding Options.GizmoVisible, Mode=TwoWay}">
+                            <TextBlock Text="A" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                <Button Classes="MaxToolbarIcon" ToolTip.Tip="Zoom Extents" Command="{Binding Actions.ZoomExtentsCommand}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M5,5 H9 V7 H7 V9 H5 Z M15,5 H19 V9 H17 V7 H15 Z M5,15 H9 V19 H7 V17 H5 Z M15,15 H19 V19 H17 V17 H15 Z"/>
+                    </Viewbox>
+                </Button>
+                <Button Classes="MaxToolbarIcon" ToolTip.Tip="Clear Scene" Command="{Binding Actions.ClearSceneCommand}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M6,6 L18,18 M18,6 L6,18"/>
+                    </Viewbox>
+                </Button>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</UserControl>

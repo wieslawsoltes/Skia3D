@@ -2,6 +2,12 @@ using System.Numerics;
 
 namespace Skia3D.Core;
 
+public enum CameraProjectionMode
+{
+    Perspective,
+    Orthographic
+}
+
 public sealed class Camera
 {
     public Vector3 Position { get; set; } = new(0f, 0f, 8f);
@@ -11,16 +17,112 @@ public sealed class Camera
     public float AspectRatio { get; set; } = 1f;
     public float NearPlane { get; set; } = 0.1f;
     public float FarPlane { get; set; } = 100f;
+    public float OrthographicSize { get; set; } = 6f;
+    public CameraProjectionMode ProjectionMode { get; set; } = CameraProjectionMode.Perspective;
 
     public Matrix4x4 GetViewMatrix() => Matrix4x4.CreateLookAt(Position, Target, Up);
 
-    public Matrix4x4 GetProjectionMatrix() => Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, AspectRatio, NearPlane, FarPlane);
+    public Matrix4x4 GetProjectionMatrix()
+    {
+        if (ProjectionMode == CameraProjectionMode.Orthographic)
+        {
+            var size = MathF.Max(0.01f, OrthographicSize);
+            var height = size * 2f;
+            var width = height * MathF.Max(0.01f, AspectRatio);
+            return Matrix4x4.CreateOrthographic(width, height, NearPlane, FarPlane);
+        }
+
+        return Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, AspectRatio, NearPlane, FarPlane);
+    }
 
     public Matrix4x4 GetViewProjectionMatrix()
     {
         var view = GetViewMatrix();
         var projection = GetProjectionMatrix();
         return view * projection;
+    }
+
+    public static bool TryBuildRay(Camera camera, Vector2 screen, Vector2 viewportSize, out Vector3 origin, out Vector3 direction)
+    {
+        origin = camera.Position;
+        direction = default;
+
+        if (viewportSize.X <= 0f || viewportSize.Y <= 0f)
+        {
+            return false;
+        }
+
+        var ndcX = (2f * screen.X / viewportSize.X) - 1f;
+        var ndcY = 1f - (2f * screen.Y / viewportSize.Y);
+
+        var view = camera.GetViewMatrix();
+        var projection = camera.GetProjectionMatrix();
+        if (!Matrix4x4.Invert(view * projection, out var invViewProj))
+        {
+            return false;
+        }
+
+        var near = Vector4.Transform(new Vector4(ndcX, ndcY, 0f, 1f), invViewProj);
+        var far = Vector4.Transform(new Vector4(ndcX, ndcY, 1f, 1f), invViewProj);
+
+        if (MathF.Abs(near.W) < 1e-6f || MathF.Abs(far.W) < 1e-6f)
+        {
+            return false;
+        }
+
+        near /= near.W;
+        far /= far.W;
+
+        if (camera.ProjectionMode == CameraProjectionMode.Orthographic)
+        {
+            origin = new Vector3(near.X, near.Y, near.Z);
+            var orthoDir = new Vector3(far.X - near.X, far.Y - near.Y, far.Z - near.Z);
+            if (orthoDir.LengthSquared() < 1e-12f)
+            {
+                return false;
+            }
+
+            direction = Vector3.Normalize(orthoDir);
+            return true;
+        }
+
+        var dir = new Vector3(far.X - origin.X, far.Y - origin.Y, far.Z - origin.Z);
+        if (dir.LengthSquared() < 1e-12f)
+        {
+            return false;
+        }
+
+        direction = Vector3.Normalize(dir);
+        return true;
+    }
+
+    public static bool TryUnproject(Camera camera, Vector2 screen, Vector2 viewportSize, float ndcZ, out Vector3 world)
+    {
+        world = default;
+        if (viewportSize.X <= 0f || viewportSize.Y <= 0f)
+        {
+            return false;
+        }
+
+        var ndcX = (2f * screen.X / viewportSize.X) - 1f;
+        var ndcY = 1f - (2f * screen.Y / viewportSize.Y);
+
+        var view = camera.GetViewMatrix();
+        var projection = camera.GetProjectionMatrix();
+        if (!Matrix4x4.Invert(view * projection, out var invViewProj))
+        {
+            return false;
+        }
+
+        var clip = Vector4.Transform(new Vector4(ndcX, ndcY, ndcZ, 1f), invViewProj);
+        if (MathF.Abs(clip.W) < 1e-6f)
+        {
+            return false;
+        }
+
+        clip /= clip.W;
+        world = new Vector3(clip.X, clip.Y, clip.Z);
+        return true;
     }
 }
 
@@ -141,37 +243,6 @@ public sealed class OrbitCameraController
 
     private static bool TryBuildRay(Camera camera, Vector2 screen, Vector2 viewportSize, out Vector3 origin, out Vector3 direction)
     {
-        origin = camera.Position;
-        direction = default;
-
-        var ndcX = (2f * screen.X / viewportSize.X) - 1f;
-        var ndcY = 1f - (2f * screen.Y / viewportSize.Y);
-
-        var view = camera.GetViewMatrix();
-        var projection = camera.GetProjectionMatrix();
-        if (!Matrix4x4.Invert(view * projection, out var invViewProj))
-        {
-            return false;
-        }
-
-        var near = Vector4.Transform(new Vector4(ndcX, ndcY, -1f, 1f), invViewProj);
-        var far = Vector4.Transform(new Vector4(ndcX, ndcY, 1f, 1f), invViewProj);
-
-        if (MathF.Abs(near.W) < 1e-6f || MathF.Abs(far.W) < 1e-6f)
-        {
-            return false;
-        }
-
-        near /= near.W;
-        far /= far.W;
-
-        var dir = new Vector3(far.X - origin.X, far.Y - origin.Y, far.Z - origin.Z);
-        if (dir.LengthSquared() < 1e-12f)
-        {
-            return false;
-        }
-
-        direction = Vector3.Normalize(dir);
-        return true;
+        return Camera.TryBuildRay(camera, screen, viewportSize, out origin, out direction);
     }
 }

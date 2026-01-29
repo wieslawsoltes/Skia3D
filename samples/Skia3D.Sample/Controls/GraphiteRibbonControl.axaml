@@ -1,0 +1,130 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.GraphiteRibbonControl"
+             x:DataType="vm:EditorToolbarViewModel">
+    <Border Classes="MaxRibbon">
+        <StackPanel Spacing="6">
+            <Border Classes="MaxRibbonTabs">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="True">Modeling</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs">Freeform</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs">Selection</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs">Object Paint</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsEnabled="False">Populate</RadioButton>
+                </StackPanel>
+            </Border>
+            <WrapPanel Orientation="Horizontal">
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Classes="MaxRibbonButton" IsEnabled="False">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Create Flow" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" IsEnabled="False">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Create Idle Area" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Text="Populate" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.ExtrudeFacesCommand}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Extrude" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.BevelFacesCommand}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Bevel" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.InsetFacesCommand}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Inset" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.LoopCutEdgeLoopCommand}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Loop Cut" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Text="Modeling" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.SelectEdgeLoopCommand}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Edge Loop" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.SelectEdgeRingCommand}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Edge Ring" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" IsEnabled="False">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Box Select" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Classes="MaxRibbonButton" IsEnabled="False">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Paint Select" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                        <TextBlock Text="Selection" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <ToggleButton Classes="MaxRibbonButton" IsChecked="{Binding Options.GridEnabled, Mode=TwoWay}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Grid" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton Classes="MaxRibbonButton" IsChecked="{Binding Options.WireframeEnabled, Mode=TwoWay}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Wireframe" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </ToggleButton>
+                            <ToggleButton Classes="MaxRibbonButton" IsChecked="{Binding Options.GizmoSnapEnabled, Mode=TwoWay}">
+                                <StackPanel Spacing="4" HorizontalAlignment="Center">
+                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
+                                    <TextBlock Text="Snaps" Classes="MaxRibbonButtonLabel"/>
+                                </StackPanel>
+                            </ToggleButton>
+                        </StackPanel>
+                        <TextBlock Text="Display" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

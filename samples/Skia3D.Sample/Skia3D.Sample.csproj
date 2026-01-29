@@ -23,5 +23,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Skia3D.Core\Skia3D.Core.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Animation\Skia3D.Animation.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Editor\Skia3D.Editor.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Input\Skia3D.Input.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.IO\Skia3D.IO.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Modeling\Skia3D.Modeling.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Runtime\Skia3D.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Scene\Skia3D.Scene.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.ShaderGraph\Skia3D.ShaderGraph.csproj" />
   </ItemGroup>
 </Project>

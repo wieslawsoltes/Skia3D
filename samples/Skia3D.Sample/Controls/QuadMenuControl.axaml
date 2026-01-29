@@ -1,0 +1,116 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.QuadMenuControl"
+             x:DataType="vm:MainWindowViewModel">
+    <Border Classes="MaxQuadMenu">
+        <Grid ColumnDefinitions="*,*" RowDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
+            <Border Classes="MaxQuadPanel" Grid.Row="0" Grid.Column="0">
+                <DockPanel LastChildFill="True">
+                    <Border Classes="MaxQuadHeaderAccent" DockPanel.Dock="Top"/>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Selection" Classes="MaxQuadTitle"/>
+                        <UniformGrid Columns="2" Rows="2" ColumnSpacing="4" RowSpacing="4">
+                            <Button Classes="MaxQuadButton"
+                                    Content="Click"
+                                    Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                    CommandParameter="0"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Box"
+                                    Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                    CommandParameter="1"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Paint"
+                                    Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                    CommandParameter="2"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Lasso"
+                                    Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                    CommandParameter="3"/>
+                        </UniformGrid>
+                        <ToggleButton Classes="MaxQuadButton"
+                                      Content="Crossing"
+                                      IsChecked="{Binding Toolbar.Options.SelectionCrossing, Mode=TwoWay}"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Classes="MaxQuadPanel" Grid.Row="0" Grid.Column="1">
+                <DockPanel LastChildFill="True">
+                    <Border Classes="MaxQuadHeaderAccent" DockPanel.Dock="Top"/>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Transform" Classes="MaxQuadTitle"/>
+                        <UniformGrid Columns="3" Rows="1" ColumnSpacing="4">
+                            <Button Classes="MaxQuadButton"
+                                    Content="Move"
+                                    Command="{Binding Toolbar.Options.SetGizmoModeCommand}"
+                                    CommandParameter="0"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Rotate"
+                                    Command="{Binding Toolbar.Options.SetGizmoModeCommand}"
+                                    CommandParameter="1"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Scale"
+                                    Command="{Binding Toolbar.Options.SetGizmoModeCommand}"
+                                    CommandParameter="2"/>
+                        </UniformGrid>
+                        <ToggleButton Classes="MaxQuadButton"
+                                      Content="Gizmo"
+                                      IsChecked="{Binding Toolbar.Options.GizmoVisible, Mode=TwoWay}"/>
+                        <ToggleButton Classes="MaxQuadButton"
+                                      Content="Snap"
+                                      IsChecked="{Binding Toolbar.Options.GizmoSnapEnabled, Mode=TwoWay}"/>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Classes="MaxQuadPanel" Grid.Row="1" Grid.Column="0">
+                <DockPanel LastChildFill="True">
+                    <Border Classes="MaxQuadHeaderAccent" DockPanel.Dock="Top"/>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Display" Classes="MaxQuadTitle"/>
+                        <UniformGrid Columns="2" Rows="2" ColumnSpacing="4" RowSpacing="4">
+                            <ToggleButton Classes="MaxQuadButton"
+                                          Content="Grid"
+                                          IsChecked="{Binding Toolbar.Options.GridEnabled, Mode=TwoWay}"/>
+                            <ToggleButton Classes="MaxQuadButton"
+                                          Content="Wireframe"
+                                          IsChecked="{Binding Toolbar.Options.WireframeEnabled, Mode=TwoWay}"/>
+                            <ToggleButton Classes="MaxQuadButton"
+                                          Content="Lighting"
+                                          IsChecked="{Binding Toolbar.Options.LightingEnabled, Mode=TwoWay}"/>
+                            <ToggleButton Classes="MaxQuadButton"
+                                          Content="Stats"
+                                          IsChecked="{Binding Toolbar.Options.ShowStats, Mode=TwoWay}"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <Border Classes="MaxQuadPanel" Grid.Row="1" Grid.Column="1">
+                <DockPanel LastChildFill="True">
+                    <Border Classes="MaxQuadHeaderAccent" DockPanel.Dock="Top"/>
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="View" Classes="MaxQuadTitle"/>
+                        <UniformGrid Columns="2" Rows="2" ColumnSpacing="4" RowSpacing="4">
+                            <Button Classes="MaxQuadButton"
+                                    Content="Zoom Extents"
+                                    Command="{Binding Actions.ZoomExtentsCommand}"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Clear Scene"
+                                    Command="{Binding Actions.ClearSceneCommand}"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Undo"
+                                    Command="{Binding Actions.UndoCommand}"
+                                    IsEnabled="{Binding Editor.CanUndo}"/>
+                            <Button Classes="MaxQuadButton"
+                                    Content="Redo"
+                                    Command="{Binding Actions.RedoCommand}"
+                                    IsEnabled="{Binding Editor.CanRedo}"/>
+                        </UniformGrid>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

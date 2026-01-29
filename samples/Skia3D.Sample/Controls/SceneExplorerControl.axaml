@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             xmlns:local="clr-namespace:Skia3D.Sample"
+             x:Class="Skia3D.Sample.Controls.SceneExplorerControl"
+             x:DataType="vm:CommandPanelViewModel">
+    <Border Classes="MaxPanel" Width="260">
+        <Grid RowDefinitions="Auto,Auto,*,Auto" ColumnDefinitions="Auto,*">
+            <Border Grid.Row="0" Grid.ColumnSpan="2" Classes="MaxPanelHeader">
+                <DockPanel LastChildFill="True">
+                    <TextBlock Text="Scene Explorer" Classes="MaxPanelTitle" DockPanel.Dock="Left"/>
+                    <TextBox Width="120" Watermark="Search" Classes="MaxPanelSearch" DockPanel.Dock="Right"/>
+                </DockPanel>
+            </Border>
+
+            <Border Grid.Row="1"
+                    Grid.ColumnSpan="2"
+                    Background="#2A2F35"
+                    BorderBrush="#1F2328"
+                    BorderThickness="0,0,0,1"
+                    Padding="6,4">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <RadioButton Classes="MaxPanelTab" GroupName="SceneExplorerTabs" IsChecked="True">Select</RadioButton>
+                    <RadioButton Classes="MaxPanelTab" GroupName="SceneExplorerTabs">Display</RadioButton>
+                    <RadioButton Classes="MaxPanelTab" GroupName="SceneExplorerTabs">Edit</RadioButton>
+                    <RadioButton Classes="MaxPanelTab" GroupName="SceneExplorerTabs">Customize</RadioButton>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2"
+                    Grid.Column="0"
+                    Background="#262B31"
+                    Padding="4">
+                <StackPanel Spacing="4">
+                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Select">
+                        <TextBlock Text="Q" Classes="MaxToolbarGlyph"/>
+                    </Button>
+                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Move">
+                        <TextBlock Text="W" Classes="MaxToolbarGlyph"/>
+                    </Button>
+                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Rotate">
+                        <TextBlock Text="E" Classes="MaxToolbarGlyph"/>
+                    </Button>
+                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Scale">
+                        <TextBlock Text="R" Classes="MaxToolbarGlyph"/>
+                    </Button>
+                    <Border Height="1" Background="#1C1F23" Margin="0,6"/>
+                    <Button Classes="MaxToolStripButton"
+                            ToolTip.Tip="Isolate"
+                            Command="{Binding Actions.IsolateSelectionCommand}"
+                            IsEnabled="{Binding Hierarchy.CanIsolate}">
+                        <TextBlock Text="I" Classes="MaxToolbarGlyph"/>
+                    </Button>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="2" Grid.Column="1" Padding="8">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                    <ComboBox Classes="MaxPanelCombo" Height="24">
+                        <ComboBoxItem Content="All Objects"/>
+                        <ComboBoxItem Content="Geometry"/>
+                        <ComboBoxItem Content="Lights"/>
+                        <ComboBoxItem Content="Cameras"/>
+                    </ComboBox>
+                    <ScrollViewer Grid.Row="1"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <TreeView ItemsSource="{Binding Hierarchy.Items}"
+                                  SelectedItem="{Binding Hierarchy.SelectedItem, Mode=TwoWay}"
+                                  Classes="MaxTree"
+                                  BorderThickness="0">
+                            <TreeView.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="Isolate Selection"
+                                              Command="{Binding Actions.IsolateSelectionCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanIsolate}"/>
+                                    <MenuItem Header="Unhide All"
+                                              Command="{Binding Actions.UnhideAllCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanUnhide}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Frame Selection"
+                                              Command="{Binding Actions.ZoomExtentsCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanResetTransform}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Center Pivot"
+                                              Command="{Binding Actions.CenterPivotCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanCenterPivot}"/>
+                                    <MenuItem Header="Reset Transform"
+                                              Command="{Binding Actions.ResetTransformCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanResetTransform}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Rename"
+                                              Command="{Binding Actions.RenameSelectionCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanRename}"/>
+                                    <MenuItem Header="Delete" IsEnabled="False"/>
+                                </ContextMenu>
+                            </TreeView.ContextMenu>
+                            <TreeView.ItemTemplate>
+                                <TreeDataTemplate DataType="{x:Type local:SceneNodeItem}"
+                                                  ItemsSource="{Binding Children}">
+                                    <TextBlock Text="{Binding Name}" Foreground="#E8EEF5"/>
+                                </TreeDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <Border Grid.Row="3" Grid.ColumnSpan="2" Classes="MaxPanelFooter">
+                <DockPanel LastChildFill="True">
+                    <TextBlock Text="{Binding Hierarchy.SelectionLabel}" Classes="MaxPanelFooterText" DockPanel.Dock="Left"/>
+                    <TextBlock Text="{Binding Hierarchy.PositionLabel}" Classes="MaxPanelFooterText" DockPanel.Dock="Right"/>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Border>
+</UserControl>

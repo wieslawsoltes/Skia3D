@@ -1,0 +1,148 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             mc:Ignorable="d"
+             x:Class="Skia3D.Sample.Controls.EditorToolbarControl"
+             x:DataType="vm:EditorToolbarViewModel">
+    <Border Background="#111820"
+            BorderBrush="#2A3644"
+            BorderThickness="0,0,0,1"
+            Padding="8,6">
+        <DockPanel LastChildFill="True">
+            <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button x:Name="MenuButton" Classes="ToolbarButton" Padding="8,4" Command="{Binding Actions.ToggleCommandPanelCommand}" ToolTip.Tip="Toggle Command Panel">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <StackPanel Spacing="3" VerticalAlignment="Center">
+                            <Border Width="14" Height="2" Background="#E8EEF5"/>
+                            <Border Width="14" Height="2" Background="#E8EEF5"/>
+                            <Border Width="14" Height="2" Background="#E8EEF5"/>
+                        </StackPanel>
+                        <TextBlock x:Name="MenuButtonLabel"
+                                   Text="{Binding Actions.CommandPanelLabel}"
+                                   Foreground="#E8EEF5"
+                                   FontWeight="Bold"
+                                   FontSize="11"
+                                   MaxWidth="140"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                </Button>
+                <TextBlock Text="Skia3D" Foreground="#E8EEF5" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Border Classes="ToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button Classes="ToolbarIcon" ToolTip.Tip="Load" Command="{Binding Actions.LoadObjCommand}">
+                            <Viewbox Width="16" Height="16">
+                                <Path Classes="ToolbarGlyph" Data="M4,7 H9 L11,9 H20 V18 H4 Z M4,9 H20"/>
+                            </Viewbox>
+                        </Button>
+                        <Button Classes="ToolbarIcon" ToolTip.Tip="Zoom Extents" Command="{Binding Actions.ZoomExtentsCommand}">
+                            <Viewbox Width="16" Height="16">
+                                <Path Classes="ToolbarGlyph" Data="M5,5 H9 V7 H7 V9 H5 Z M15,5 H19 V9 H17 V7 H15 Z M5,15 H9 V19 H7 V17 H5 Z M15,15 H19 V19 H17 V17 H15 Z"/>
+                            </Viewbox>
+                        </Button>
+                        <Button Classes="ToolbarIcon" ToolTip.Tip="Clear Scene" Command="{Binding Actions.ClearSceneCommand}">
+                            <Viewbox Width="16" Height="16">
+                                <Path Classes="ToolbarGlyph" Data="M6,6 L18,18 M18,6 L6,18"/>
+                            </Viewbox>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="ToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button x:Name="UndoButton" Classes="ToolbarIcon" ToolTip.Tip="Undo" Command="{Binding Actions.UndoCommand}" IsEnabled="{Binding Editor.CanUndo}">
+                            <Viewbox Width="16" Height="16">
+                                <Path Classes="ToolbarGlyph" Data="M10,6 L5,11 L10,16 M5,11 H17"/>
+                            </Viewbox>
+                        </Button>
+                        <Button x:Name="RedoButton" Classes="ToolbarIcon" ToolTip.Tip="Redo" Command="{Binding Actions.RedoCommand}" IsEnabled="{Binding Editor.CanRedo}">
+                            <Viewbox Width="16" Height="16">
+                                <Path Classes="ToolbarGlyph" Data="M14,6 L19,11 L14,16 M5,11 H19"/>
+                            </Viewbox>
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="ToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <ComboBox x:Name="SelectionToolCombo" Classes="ToolbarCombo" Width="96" SelectedIndex="{Binding Options.SelectionToolIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="Click"/>
+                            <ComboBoxItem Content="Box"/>
+                            <ComboBoxItem Content="Paint"/>
+                            <ComboBoxItem Content="Lasso"/>
+                        </ComboBox>
+                        <ToggleButton x:Name="SelectionCrossingToggle" Classes="ToolbarIcon" ToolTip.Tip="Crossing Select" IsChecked="{Binding Options.SelectionCrossing, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="X"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="ToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <ToggleButton x:Name="EditModeToggle" Classes="ToolbarIcon" ToolTip.Tip="Object Mode" IsChecked="{Binding Options.EditMode, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="1"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="VertexModeToggle" Classes="ToolbarIcon" ToolTip.Tip="Vertex" IsChecked="{Binding Options.VertexMode, Mode=TwoWay}" IsEnabled="{Binding Options.EditMode}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="2"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="EdgeModeToggle" Classes="ToolbarIcon" ToolTip.Tip="Edge" IsChecked="{Binding Options.EdgeMode, Mode=TwoWay}" IsEnabled="{Binding Options.EditMode}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="3"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="FaceModeToggle" Classes="ToolbarIcon" ToolTip.Tip="Face" IsChecked="{Binding Options.FaceMode, Mode=TwoWay}" IsEnabled="{Binding Options.EditMode}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="4"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="ToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <ToggleButton x:Name="GizmoToggle" Classes="ToolbarIcon" ToolTip.Tip="Show Gizmo" IsChecked="{Binding Options.GizmoVisible, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="G"/>
+                        </ToggleButton>
+                        <ComboBox x:Name="GizmoModeCombo" Classes="ToolbarCombo" Width="110" SelectedIndex="{Binding Options.GizmoModeIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="Translate"/>
+                            <ComboBoxItem Content="Rotate"/>
+                            <ComboBoxItem Content="Scale"/>
+                        </ComboBox>
+                        <ComboBox x:Name="GizmoAxisCombo" Classes="ToolbarCombo" Width="90" SelectedIndex="{Binding Options.GizmoAxisIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="Free"/>
+                            <ComboBoxItem Content="X"/>
+                            <ComboBoxItem Content="Y"/>
+                            <ComboBoxItem Content="Z"/>
+                            <ComboBoxItem Content="XY"/>
+                            <ComboBoxItem Content="XZ"/>
+                            <ComboBoxItem Content="YZ"/>
+                        </ComboBox>
+                        <ToggleButton x:Name="GizmoSnapToggle" Classes="ToolbarIcon" ToolTip.Tip="Toggle Snap" IsChecked="{Binding Options.GizmoSnapEnabled, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="S"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+
+                <Border Classes="ToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <ToggleButton x:Name="DepthToggle" Classes="ToolbarIcon" ToolTip.Tip="Depth Buffer" IsChecked="{Binding Options.DepthEnabled, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="D"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="LightingToggle" Classes="ToolbarIcon" ToolTip.Tip="Lighting" IsChecked="{Binding Options.LightingEnabled, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="L"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="WireframeToggle" Classes="ToolbarIcon" ToolTip.Tip="Wireframe" IsChecked="{Binding Options.WireframeEnabled, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="W"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="GridToggle" Classes="ToolbarIcon" ToolTip.Tip="Grid" IsChecked="{Binding Options.GridEnabled, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="G"/>
+                        </ToggleButton>
+                        <ToggleButton x:Name="PauseToggle" Classes="ToolbarIcon" ToolTip.Tip="Pause" IsChecked="{Binding Options.PauseEnabled, Mode=TwoWay}">
+                            <TextBlock Classes="ToolbarGlyphText" Text="P"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+        </DockPanel>
+    </Border>
+</UserControl>

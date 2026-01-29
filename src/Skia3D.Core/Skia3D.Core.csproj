@@ -11,4 +11,9 @@
     <PackageReference Include="SkiaSharp" Version="2.88.9" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Skia3D.Geometry\Skia3D.Geometry.csproj" />
+    <ProjectReference Include="..\Skia3D.Acceleration\Skia3D.Acceleration.csproj" />
+  </ItemGroup>
+
 </Project>

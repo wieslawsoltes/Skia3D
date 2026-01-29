@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Skia3D.Core\Skia3D.Core.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Scene\Skia3D.Scene.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Runtime\Skia3D.Runtime.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Physics\Skia3D.Physics.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Audio\Skia3D.Audio.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Vfx\Skia3D.Vfx.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Navigation\Skia3D.Navigation.csproj" />
+    <PackageReference Include="SkiaSharp" Version="2.88.9" />
+  </ItemGroup>
+</Project>

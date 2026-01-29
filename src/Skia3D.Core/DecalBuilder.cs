@@ -17,7 +17,7 @@ public static class DecalBuilder
     /// </summary>
     public static DecalAtlas BuildFromDraw(int width, int height, SKColor clear, Action<SKCanvas> draw)
     {
-        var bmp = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Premul));
+        var bmp = new SKBitmap(new SKImageInfo(width, height, SKColorType.Rgba8888, SKAlphaType.Premul));
         using var gc = new SKCanvas(bmp);
         gc.Clear(clear);
         draw(gc);

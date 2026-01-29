@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+    <PackageReference Include="xunit" Version="2.8.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Skia3D.Core\Skia3D.Core.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Geometry\Skia3D.Geometry.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.IO\Skia3D.IO.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Scene\Skia3D.Scene.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Animation\Skia3D.Animation.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -13,10 +13,15 @@ public sealed class SkiaView : Control
 {
     public event EventHandler<SkiaRenderEventArgs>? RenderFrame;
 
+    public SkiaView()
+    {
+        ClipToBounds = true;
+    }
+
     public override void Render(DrawingContext context)
     {
         base.Render(context);
-        var op = new SkiaCustomDrawOperation(Bounds, this, RenderFrame);
+        var op = new SkiaCustomDrawOperation(new Rect(Bounds.Size), this, RenderFrame);
         context.Custom(op);
     }
 
@@ -50,11 +55,18 @@ public sealed class SkiaView : Control
                 return;
             }
 
-            var info = default(SKImageInfo);
-            using (var pixmap = lease.SkSurface.PeekPixels())
+            var width = (int)Math.Ceiling(_bounds.Width);
+            var height = (int)Math.Ceiling(_bounds.Height);
+            if (width <= 0 || height <= 0)
             {
-                info = pixmap?.Info ?? new SKImageInfo((int)MathF.Ceiling((float)_bounds.Width), (int)MathF.Ceiling((float)_bounds.Height));
+                return;
             }
+
+            var info = new SKImageInfo(width, height);
+
+            var canvas = lease.SkSurface.Canvas;
+            using var restore = new SKAutoCanvasRestore(canvas, true);
+            canvas.ClipRect(new SKRect(0, 0, (float)_bounds.Width, (float)_bounds.Height));
 
             _handler?.Invoke(_owner, new SkiaRenderEventArgs(lease.SkSurface, info));
         }

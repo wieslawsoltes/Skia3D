@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.WorkspaceManagerControl"
+             x:DataType="vm:WorkspaceViewModel">
+    <Border Classes="MaxPanel"
+            Width="300"
+            ClipToBounds="True"
+            BoxShadow="0 12 24 0 #44000000">
+        <Grid RowDefinitions="Auto,*">
+            <Border Classes="MaxPanelHeader" Padding="8,6">
+                <DockPanel LastChildFill="True">
+                    <TextBlock Text="Workspace Manager" Classes="MaxPanelTitle" DockPanel.Dock="Left"/>
+                    <Button Classes="MaxToolbarIcon"
+                            Command="{Binding CloseManagerCommand}"
+                            DockPanel.Dock="Right"
+                            Width="22"
+                            Height="22">
+                        <Viewbox Width="12" Height="12">
+                            <Path Classes="MaxToolbarGlyph" Data="M4,4 L12,12 M12,4 L4,12"/>
+                        </Viewbox>
+                    </Button>
+                </DockPanel>
+            </Border>
+            <ScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Spacing="10" Margin="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="SectionLabel" Text="Current workspace"/>
+                        <ComboBox Classes="MaxPanelCombo"
+                                  ItemsSource="{Binding Workspaces}"
+                                  SelectedItem="{Binding SelectedWorkspace, Mode=TwoWay}"/>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Classes="SectionLabel" Text="Save workspace"/>
+                        <TextBox Classes="MaxPanelSearch"
+                                 Text="{Binding NewWorkspaceName, Mode=TwoWay}"
+                                 Watermark="New workspace name"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Classes="InspectorButton"
+                                    Content="Save"
+                                    Command="{Binding SaveCommand}"/>
+                            <Button Classes="InspectorButton"
+                                    Content="Save As"
+                                    Command="{Binding SaveAsCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Spacing="6">
+                        <TextBlock Classes="SectionLabel" Text="Layout panels"/>
+                        <CheckBox Content="Ribbon" IsChecked="{Binding ShowRibbon, Mode=TwoWay}"/>
+                        <CheckBox Content="Scene Explorer" IsChecked="{Binding ShowSceneExplorer, Mode=TwoWay}"/>
+                        <CheckBox Content="Command Panel" IsChecked="{Binding ShowCommandPanel, Mode=TwoWay}"/>
+                        <CheckBox Content="Viewport Toolbar" IsChecked="{Binding ShowViewportToolbar, Mode=TwoWay}"/>
+                        <CheckBox Content="Timeline" IsChecked="{Binding ShowTimeline, Mode=TwoWay}"/>
+                        <CheckBox Content="Status Bar" IsChecked="{Binding ShowStatusBar, Mode=TwoWay}"/>
+                    </StackPanel>
+                    <Border Height="1" Background="#1F2328"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Button Classes="InspectorButton"
+                                Content="Reset Layout"
+                                Command="{Binding ResetLayoutCommand}"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

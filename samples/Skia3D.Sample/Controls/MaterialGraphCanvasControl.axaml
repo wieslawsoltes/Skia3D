@@ -1,0 +1,182 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.MaterialGraphCanvasControl"
+             x:DataType="vm:ShaderGraphCanvasViewModel">
+    <Border x:Name="GraphViewport"
+            Classes="GraphCanvas"
+            ClipToBounds="True"
+            PointerPressed="OnViewportPointerPressed"
+            PointerMoved="OnViewportPointerMoved"
+            PointerReleased="OnViewportPointerReleased"
+            PointerWheelChanged="OnViewportPointerWheelChanged">
+        <Canvas>
+            <Canvas.RenderTransform>
+                <TransformGroup>
+                    <ScaleTransform ScaleX="{Binding Zoom}" ScaleY="{Binding Zoom}"/>
+                    <TranslateTransform X="{Binding PanX}" Y="{Binding PanY}"/>
+                </TransformGroup>
+            </Canvas.RenderTransform>
+            <ItemsControl ItemsSource="{Binding Links}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:ShaderLinkViewModel}">
+                        <Path Data="{Binding PathData}"
+                              Stroke="{Binding Stroke}"
+                              StrokeThickness="2"
+                              IsHitTestVisible="False"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <ItemsControl ItemsSource="{Binding Nodes}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:ShaderNodeViewModel}">
+                        <Border Classes="GraphNode"
+                                Width="{Binding NodeWidth}"
+                                Canvas.Left="{Binding X}"
+                                Canvas.Top="{Binding Y}">
+                            <Grid RowDefinitions="Auto,*">
+                                <Border Classes="GraphNodeHeader"
+                                        PointerPressed="OnNodePointerPressed"
+                                        PointerMoved="OnNodePointerMoved"
+                                        PointerReleased="OnNodePointerReleased">
+                                    <TextBlock Text="{Binding Title}" Classes="GraphNodeTitle"/>
+                                </Border>
+                                <StackPanel Spacing="4">
+                                    <StackPanel x:DataType="vm:ColorNodeViewModel"
+                                                IsVisible="{Binding IsColorNode}"
+                                                Margin="6,6,6,0"
+                                                Spacing="4">
+                                        <TextBlock Text="{Binding ColorLabel}" Classes="GraphNodeDetailLabel"/>
+                                        <Grid ColumnDefinitions="Auto,*"
+                                              RowDefinitions="Auto,Auto,Auto"
+                                              ColumnSpacing="6"
+                                              RowSpacing="4">
+                                            <TextBlock Text="R" Classes="GraphNodeDetailKey"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding R}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"
+                                                    Height="18"/>
+                                            <TextBlock Grid.Row="1" Text="G" Classes="GraphNodeDetailKey"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding G}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"
+                                                    Height="18"/>
+                                            <TextBlock Grid.Row="2" Text="B" Classes="GraphNodeDetailKey"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding B}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"
+                                                    Height="18"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <StackPanel x:DataType="vm:FloatNodeViewModel"
+                                                IsVisible="{Binding IsFloatNode}"
+                                                Margin="6,6,6,0"
+                                                Spacing="4">
+                                        <TextBlock Text="{Binding ValueLabel}" Classes="GraphNodeDetailLabel"/>
+                                        <Slider Minimum="-10"
+                                                Maximum="10"
+                                                Value="{Binding Value}"
+                                                TickFrequency="0.5"
+                                                SmallChange="0.1"
+                                                LargeChange="1"
+                                                Height="18"/>
+                                    </StackPanel>
+                                    <StackPanel x:DataType="vm:TextureNodeViewModel"
+                                                IsVisible="{Binding IsTextureNode}"
+                                                Margin="6,6,6,0"
+                                                Spacing="4">
+                                        <TextBlock Text="Texture" Classes="GraphNodeDetailLabel"/>
+                                        <ComboBox ItemsSource="{Binding Options}"
+                                                  SelectedItem="{Binding SelectedOption}"
+                                                  Classes="GraphNodeCombo"
+                                                  Height="24">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:TextureOption}">
+                                                    <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel x:DataType="vm:NormalMapNodeViewModel"
+                                                IsVisible="{Binding IsNormalMapNode}"
+                                                Margin="6,6,6,0"
+                                                Spacing="4">
+                                        <TextBlock Text="{Binding StrengthLabel}" Classes="GraphNodeDetailLabel"/>
+                                        <Slider Minimum="0"
+                                                Maximum="4"
+                                                Value="{Binding Strength}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"
+                                                Height="18"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*"
+                                          ColumnSpacing="6"
+                                          Margin="6,4,6,6">
+                                        <ItemsControl ItemsSource="{Binding Inputs}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ShaderPortViewModel}">
+                                                    <Button Classes="GraphPort"
+                                                            Command="{Binding ClickCommand}"
+                                                            Focusable="False"
+                                                            HorizontalContentAlignment="Left">
+                                                        <DockPanel LastChildFill="True">
+                                                            <Ellipse Width="8"
+                                                                     Height="8"
+                                                                     Fill="{Binding PortFill}"
+                                                                     Stroke="{Binding PortStroke}"
+                                                                     StrokeThickness="{Binding PortStrokeThickness}"
+                                                                     Margin="0,0,4,0"/>
+                                                            <TextBlock Text="{Binding Name}" Classes="GraphPortLabel"/>
+                                                        </DockPanel>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <ItemsControl Grid.Column="1" ItemsSource="{Binding Outputs}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ShaderPortViewModel}">
+                                                    <Button Classes="GraphPort"
+                                                            Command="{Binding ClickCommand}"
+                                                            Focusable="False"
+                                                            HorizontalContentAlignment="Right">
+                                                        <DockPanel LastChildFill="True" HorizontalAlignment="Right">
+                                                            <TextBlock Text="{Binding Name}" Classes="GraphPortLabel"/>
+                                                            <Ellipse Width="8"
+                                                                     Height="8"
+                                                                     Fill="{Binding PortFill}"
+                                                                     Stroke="{Binding PortStroke}"
+                                                                     StrokeThickness="{Binding PortStrokeThickness}"
+                                                                     Margin="4,0,0,0"/>
+                                                        </DockPanel>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Canvas>
+    </Border>
+</UserControl>

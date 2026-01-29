@@ -1,0 +1,859 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:local="clr-namespace:Skia3D.Sample"
+             xmlns:controls="clr-namespace:Skia3D.Sample.Controls"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             mc:Ignorable="d"
+             x:Class="Skia3D.Sample.Controls.CommandPanelControl"
+             x:DataType="vm:CommandPanelViewModel">
+    <Border Margin="0,8,8,8"
+            VerticalAlignment="Stretch"
+            Width="320"
+            ClipToBounds="True"
+            Background="#2D3238"
+            BorderBrush="#1F2328"
+            BorderThickness="1"
+            CornerRadius="2"
+            BoxShadow="0 8 18 0 #33000000">
+        <Grid>
+            <TabControl Classes="CommandTabs" TabStripPlacement="Top">
+                <TabItem Classes="CommandTab" ToolTip.Tip="Create">
+                    <TabItem.Header>
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <Viewbox Width="18" Height="18">
+                                <Path Classes="CommandTabIcon" Data="M6,1 V11 M1,6 H11"/>
+                            </Viewbox>
+                            <TextBlock Classes="CommandTabLabel" Text="Create"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.IsScrollChainingEnabled="False"
+                                  Padding="10">
+                        <StackPanel Spacing="8">
+                            <Expander Classes="InspectorRollout" Header="Scene" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Quick scene actions"/>
+                                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="6">
+                                        <Button Content="Load" Classes="InspectorButton" Command="{Binding Actions.LoadObjCommand}"/>
+                                        <Button Content="Zoom Extents" Classes="InspectorButton" Command="{Binding Actions.ZoomExtentsCommand}" Grid.Column="1"/>
+                                        <Button Content="Clear Scene" Classes="InspectorButton" Command="{Binding Actions.ClearSceneCommand}" Grid.Row="1" Grid.ColumnSpan="2"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Import" IsExpanded="False">
+                                <StackPanel Spacing="6">
+                                    <CheckBox x:Name="ImportCenterToggle" Content="Center to origin" IsChecked="{Binding Options.ImportCenter, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                    <CheckBox x:Name="ImportNormalsToggle" Content="Recalculate normals" IsChecked="{Binding Options.ImportNormals, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                    <CheckBox x:Name="ImportScaleToggle" Content="Scale to radius" IsChecked="{Binding Options.ImportScaleEnabled, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="ImportScaleLabel" Text="{Binding Options.ImportScaleLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="ImportScaleSlider"
+                                                Minimum="0.1"
+                                                Maximum="10"
+                                                Value="{Binding Options.ImportScaleRadius, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"
+                                                IsEnabled="{Binding Options.ImportScaleEnabled}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Classes="CommandTab" IsSelected="True" ToolTip.Tip="Modify">
+                    <TabItem.Header>
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <Viewbox Width="18" Height="18">
+                                <Path Classes="CommandTabIcon" Data="M2,10 L10,2 M3,11 L1,13 L3,13 Z"/>
+                            </Viewbox>
+                            <TextBlock Classes="CommandTabLabel" Text="Modify"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.IsScrollChainingEnabled="False"
+                                  Padding="10">
+                        <StackPanel Spacing="8">
+                            <Expander Classes="InspectorRollout" Header="Selection" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Name="SelectionLabel" Text="{Binding Editor.SelectionSummary}" Foreground="#A3AFBD"/>
+                                    <TextBlock Classes="SectionLabel" Text="Box/Lasso: drag · Paint: sweep · Shift/Ctrl add/subtract"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionTitle" Text="Paint selection"/>
+                                        <TextBlock x:Name="PaintRadiusLabel" Text="{Binding Options.PaintRadiusLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="PaintRadiusSlider"
+                                                Minimum="6"
+                                                Maximum="120"
+                                                Value="{Binding Options.PaintRadius, Mode=TwoWay}"
+                                                TickFrequency="2"
+                                                SmallChange="2"
+                                                LargeChange="6"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Edge Loop Select" Classes="InspectorButton" Command="{Binding Actions.SelectEdgeLoopCommand}"/>
+                                        <Button Content="Edge Ring Select" Classes="InspectorButton" Command="{Binding Actions.SelectEdgeRingCommand}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Gizmo and Snapping" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Snap and axis toggles are in the toolbar."/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="GizmoSnapLabel" Text="{Binding Options.GizmoSnapLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="GizmoSnapSlider"
+                                                Minimum="0.1"
+                                                Maximum="2.0"
+                                                Value="{Binding Options.GizmoSnap, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="GizmoRotateSnapLabel" Text="{Binding Options.GizmoRotateSnapLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="GizmoRotateSnapSlider"
+                                                Minimum="1"
+                                                Maximum="90"
+                                                Value="{Binding Options.GizmoRotateSnap, Mode=TwoWay}"
+                                                TickFrequency="5"
+                                                SmallChange="1"
+                                                LargeChange="10"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="GizmoScaleSnapLabel" Text="{Binding Options.GizmoScaleSnapLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="GizmoScaleSnapSlider"
+                                                Minimum="0.01"
+                                                Maximum="1.0"
+                                                Value="{Binding Options.GizmoScaleSnap, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.01"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Modeling Ops" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Face tools"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="ExtrudeButton"
+                                                Content="Extrude"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ExtrudeFacesCommand}"
+                                                IsEnabled="{Binding Commands.CanExtrudeFaces}"/>
+                                        <Button x:Name="BevelButton"
+                                                Content="Bevel"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.BevelFacesCommand}"
+                                                IsEnabled="{Binding Commands.CanBevelFaces}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="InsetButton"
+                                                Content="Inset"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.InsetFacesCommand}"
+                                                IsEnabled="{Binding Commands.CanInsetFaces}"/>
+                                        <Button x:Name="LoopCutButton"
+                                                Content="Loop Cut"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.LoopCutEdgeLoopCommand}"
+                                                IsEnabled="{Binding Commands.CanLoopCutEdgeLoop}"/>
+                                    </Grid>
+                                    <TextBlock Classes="SectionLabel" Text="Edge tools"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="SplitEdgeButton"
+                                                Content="Split Edge"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.SplitEdgeCommand}"
+                                                IsEnabled="{Binding Commands.CanSplitEdge}"/>
+                                        <Button x:Name="BridgeEdgesButton"
+                                                Content="Bridge Edges"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.BridgeEdgesCommand}"
+                                                IsEnabled="{Binding Commands.CanBridgeEdges}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="BridgeEdgeLoopsButton"
+                                                Content="Bridge Edge Loops"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.BridgeEdgeLoopsCommand}"
+                                                IsEnabled="{Binding Commands.CanBridgeEdgeLoops}"/>
+                                        <Button x:Name="DissolveEdgeButton"
+                                                Content="Dissolve Edge"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.DissolveEdgeCommand}"
+                                                IsEnabled="{Binding Commands.CanDissolveEdge}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="CollapseEdgeButton"
+                                                Content="Collapse Edge"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.CollapseEdgeCommand}"
+                                                IsEnabled="{Binding Commands.CanCollapseEdge}"/>
+                                        <Button x:Name="MergeVerticesButton"
+                                                Content="Merge Verts"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.MergeVerticesCommand}"
+                                                IsEnabled="{Binding Commands.CanMergeVertices}"/>
+                                    </Grid>
+                                    <TextBlock Classes="SectionLabel" Text="Face cleanup"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="DissolveFacesButton"
+                                                Content="Dissolve Faces"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.DissolveFacesCommand}"
+                                                IsEnabled="{Binding Commands.CanDissolveFaces}"/>
+                                        <Button x:Name="WeldVerticesButton"
+                                                Content="Weld Verts"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.WeldVerticesCommand}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="CleanupButton"
+                                                Content="Cleanup"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.CleanupMeshCommand}"
+                                                IsEnabled="{Binding Commands.CanCleanupMesh}"/>
+                                        <Button x:Name="SmoothButton"
+                                                Content="Smooth"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.SmoothMeshCommand}"
+                                                IsEnabled="{Binding Commands.CanSmoothMesh}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Simplify" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Simplify selection or entire mesh"/>
+                                    <Button x:Name="SimplifyButton"
+                                            Content="Simplify Mesh"
+                                            Classes="InspectorButton"
+                                            Command="{Binding Actions.SimplifyMeshCommand}"
+                                            IsEnabled="{Binding Commands.CanSimplifyMesh}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="SimplifyRatioLabel" Text="{Binding Options.SimplifyRatioLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="SimplifyRatioSlider"
+                                                Minimum="0.1"
+                                                Maximum="1.0"
+                                                Value="{Binding Options.SimplifyRatio, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Smooth" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Smooth sculpting controls"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="SmoothIterationsLabel" Text="{Binding Options.SmoothIterationsLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="SmoothIterationsSlider"
+                                                Minimum="1"
+                                                Maximum="8"
+                                                Value="{Binding Options.SmoothIterations, Mode=TwoWay}"
+                                                TickFrequency="1"
+                                                SmallChange="1"
+                                                LargeChange="1"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="SmoothStrengthLabel" Text="{Binding Options.SmoothStrengthLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="SmoothStrengthSlider"
+                                                Minimum="0.1"
+                                                Maximum="1.0"
+                                                Value="{Binding Options.SmoothStrength, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Nudge" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Step selection by 0.1 units"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="+X" Classes="InspectorButton" Command="{Binding Actions.NudgePosXCommand}"/>
+                                        <Button Content="-X" Classes="InspectorButton" Command="{Binding Actions.NudgeNegXCommand}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Proportional Editing" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <CheckBox x:Name="ProportionalToggle" Content="Enable" IsChecked="{Binding Options.ProportionalEnabled, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Classes="SectionLabel" Text="Falloff" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="ProportionalFalloffCombo" Grid.Column="1" Classes="InspectorCombo" Width="140" SelectedIndex="{Binding Options.ProportionalFalloffIndex, Mode=TwoWay}">
+                                            <ComboBoxItem Content="Linear"/>
+                                            <ComboBoxItem Content="Smooth"/>
+                                            <ComboBoxItem Content="Sharp"/>
+                                            <ComboBoxItem Content="Root"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="ProportionalRadiusLabel" Text="{Binding Options.ProportionalRadiusLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="ProportionalRadiusSlider"
+                                                Minimum="0.2"
+                                                Maximum="10.0"
+                                                Value="{Binding Options.ProportionalRadius, Mode=TwoWay}"
+                                                TickFrequency="0.2"
+                                                SmallChange="0.2"
+                                                LargeChange="1.0"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="UV Tools" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="PlanarUvButton"
+                                                Content="Planar UV"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.PlanarUvCommand}"
+                                                IsEnabled="{Binding Commands.CanPlanarUv}"/>
+                                        <Button x:Name="BoxUvButton"
+                                                Content="Box UV"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.BoxUvCommand}"
+                                                IsEnabled="{Binding Commands.CanBoxUv}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="UnwrapUvButton"
+                                                Content="Unwrap"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.UnwrapUvCommand}"
+                                                IsEnabled="{Binding Commands.CanUnwrapUv}"/>
+                                        <Button x:Name="PackUvButton"
+                                                Content="Pack"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.PackUvCommand}"
+                                                IsEnabled="{Binding Commands.CanPackUv}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Classes="SectionLabel" Text="Unwrap method" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="UvUnwrapMethodCombo"
+                                                  Grid.Column="1"
+                                                  Classes="InspectorCombo"
+                                                  Width="140"
+                                                  SelectedIndex="{Binding Options.UvUnwrapMethodIndex, Mode=TwoWay}">
+                                            <ComboBoxItem Content="Planar"/>
+                                            <ComboBoxItem Content="LSCM"/>
+                                            <ComboBoxItem Content="ABF"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                                        <Button x:Name="MarkUvSeamButton"
+                                                Content="Mark Seam"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.MarkUvSeamsCommand}"
+                                                IsEnabled="{Binding Commands.CanMarkUvSeams}"/>
+                                        <Button x:Name="ClearUvSeamButton"
+                                                Content="Clear Seam"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ClearUvSeamsCommand}"
+                                                IsEnabled="{Binding Commands.CanClearUvSeams}"/>
+                                        <Button x:Name="ClearAllUvSeamButton"
+                                                Content="Clear All"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ClearAllUvSeamsCommand}"
+                                                IsEnabled="{Binding Commands.CanClearAllUvSeams}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="SelectUvIslandButton"
+                                                Content="Select Island"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.SelectUvIslandCommand}"
+                                                IsEnabled="{Binding Commands.CanSelectUvIsland}"/>
+                                        <CheckBox x:Name="UvShowSeamsToggle"
+                                                  Content="Show seams"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Options.UvShowSeams, Mode=TwoWay}"/>
+                                    </Grid>
+                                    <CheckBox x:Name="UvShowIslandsToggle"
+                                              Content="Show islands"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Options.UvShowIslands, Mode=TwoWay}"/>
+                                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                                        <Button x:Name="NormalizeUvButton"
+                                                Content="Normalize"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.NormalizeUvCommand}"
+                                                IsEnabled="{Binding Commands.CanNormalizeUv}"/>
+                                        <Button x:Name="FlipUButton"
+                                                Content="Flip U"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.FlipUCommand}"
+                                                IsEnabled="{Binding Commands.CanFlipU}"/>
+                                        <Button x:Name="FlipVButton"
+                                                Content="Flip V"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.FlipVCommand}"
+                                                IsEnabled="{Binding Commands.CanFlipV}"/>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="UvScaleLabel" Text="{Binding Options.UvScaleLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="UvScaleSlider"
+                                                Minimum="0.1"
+                                                Maximum="4.0"
+                                                Value="{Binding Options.UvScale, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="UvUnwrapAngleLabel" Text="{Binding Options.UvUnwrapAngleLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="UvUnwrapAngleSlider"
+                                                Minimum="5"
+                                                Maximum="180"
+                                                Value="{Binding Options.UvUnwrapAngle, Mode=TwoWay}"
+                                                TickFrequency="5"
+                                                SmallChange="1"
+                                                LargeChange="10"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="UvPackPaddingLabel" Text="{Binding Options.UvPackPaddingLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="UvPackPaddingSlider"
+                                                Minimum="0.0"
+                                                Maximum="0.1"
+                                                Value="{Binding Options.UvPackPadding, Mode=TwoWay}"
+                                                TickFrequency="0.01"
+                                                SmallChange="0.005"
+                                                LargeChange="0.02"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <CheckBox x:Name="UvPackRotateToggle"
+                                                  Content="Rotate islands"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Options.UvPackRotate, Mode=TwoWay}"/>
+                                        <CheckBox x:Name="UvPackUseGroupsToggle"
+                                                  Content="Use groups"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Options.UvPackUseGroups, Mode=TwoWay}"/>
+                                    </Grid>
+                                    <CheckBox x:Name="UvPackTexelToggle"
+                                              Content="Preserve texel density"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Options.UvPackPreserveTexelDensity, Mode=TwoWay}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="UvPackTexelDensityLabel"
+                                                   Text="{Binding Options.UvPackTexelDensityLabel}"
+                                                   Foreground="#A3AFBD"
+                                                   IsEnabled="{Binding Options.UvPackPreserveTexelDensity}"/>
+                                        <Slider x:Name="UvPackTexelDensitySlider"
+                                                Minimum="0.1"
+                                                Maximum="10.0"
+                                                Value="{Binding Options.UvPackTexelDensity, Mode=TwoWay}"
+                                                IsEnabled="{Binding Options.UvPackPreserveTexelDensity}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="1.0"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="UvGroupLabel" Text="UV group ID" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="UvGroupSlider"
+                                                Minimum="0"
+                                                Maximum="16"
+                                                IsSnapToTickEnabled="True"
+                                                TickFrequency="1"
+                                                Value="{Binding Options.UvGroupId, Mode=TwoWay}"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="AssignUvGroupButton"
+                                                Content="Assign Group"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.AssignUvGroupCommand}"
+                                                CommandParameter="{Binding Options.UvGroupId}"
+                                                IsEnabled="{Binding Commands.CanAssignUvGroup}"/>
+                                        <Button x:Name="ClearUvGroupButton"
+                                                Content="Clear Group"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ClearUvGroupCommand}"
+                                                IsEnabled="{Binding Commands.CanClearUvGroup}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Classes="CommandTab" ToolTip.Tip="Hierarchy">
+                    <TabItem.Header>
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <Viewbox Width="18" Height="18">
+                                <Path Classes="CommandTabIcon" Data="M2,3 H10 M6,3 V9 M2,9 H10"/>
+                            </Viewbox>
+                            <TextBlock Classes="CommandTabLabel" Text="Hierarchy"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.IsScrollChainingEnabled="False"
+                                  Padding="10">
+                        <StackPanel Spacing="8">
+                            <Expander Classes="InspectorRollout" Header="Scene Hierarchy" IsExpanded="True">
+                                <TreeView x:Name="HierarchyTree"
+                                          ItemsSource="{Binding Hierarchy.Items}"
+                                          SelectedItem="{Binding Hierarchy.SelectedItem, Mode=TwoWay}"
+                                          BorderThickness="0">
+                                    <TreeView.ItemTemplate>
+                                        <TreeDataTemplate DataType="{x:Type local:SceneNodeItem}"
+                                                          ItemsSource="{Binding Children}">
+                                            <TextBlock Text="{Binding Name}" Foreground="#E8EEF5"/>
+                                        </TreeDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Selection" IsExpanded="True">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="HierarchySelectionLabel" Text="{Binding Hierarchy.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock x:Name="HierarchyPositionLabel" Text="{Binding Hierarchy.PositionLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock x:Name="HierarchyRotationLabel" Text="{Binding Hierarchy.RotationLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock x:Name="HierarchyScaleLabel" Text="{Binding Hierarchy.ScaleLabel}" Foreground="#A3AFBD"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Pivot and Transforms" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Classes="SectionLabel" Text="Pivot tools affect the selected object."/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="CenterPivotButton"
+                                                Content="Center Pivot"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.CenterPivotCommand}"
+                                                IsEnabled="{Binding Hierarchy.CanCenterPivot}"/>
+                                        <Button x:Name="ResetTransformButton"
+                                                Content="Reset Transform"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ResetTransformCommand}"
+                                                IsEnabled="{Binding Hierarchy.CanResetTransform}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Constraints" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{Binding Constraints.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <ComboBox x:Name="ConstraintTargetCombo"
+                                              Classes="InspectorCombo"
+                                              ItemsSource="{Binding Constraints.Targets}"
+                                              SelectedItem="{Binding Constraints.SelectedTarget, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type local:SceneNodeItem}">
+                                                <TextBlock Text="{Binding Name}" Foreground="#E8EEF5"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <ComboBox x:Name="ConstraintTypeCombo"
+                                              Classes="InspectorCombo"
+                                              SelectedIndex="{Binding Constraints.ConstraintTypeIndex, Mode=TwoWay}">
+                                        <ComboBoxItem Content="None"/>
+                                        <ComboBoxItem Content="Parent"/>
+                                        <ComboBoxItem Content="Look At"/>
+                                    </ComboBox>
+                                    <CheckBox x:Name="ConstraintMaintainOffsetToggle"
+                                              Content="Maintain offset"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Constraints.MaintainOffset, Mode=TwoWay}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="ConstraintWeightLabel" Text="{Binding Constraints.WeightLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="ConstraintWeightSlider"
+                                                Minimum="0"
+                                                Maximum="1"
+                                                Value="{Binding Constraints.Weight, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button x:Name="ApplyConstraintButton"
+                                                Content="Apply"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Constraints.ApplyConstraintCommand}"/>
+                                        <Button x:Name="ClearConstraintButton"
+                                                Content="Clear"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Constraints.ClearConstraintCommand}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Classes="CommandTab" ToolTip.Tip="Motion">
+                    <TabItem.Header>
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <Viewbox Width="18" Height="18">
+                                <Path Classes="CommandTabIcon" Data="M2,2 L10,6 L2,10 Z"/>
+                            </Viewbox>
+                            <TextBlock Classes="CommandTabLabel" Text="Motion"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.IsScrollChainingEnabled="False"
+                                  Padding="10">
+                        <StackPanel Spacing="8">
+                            <Expander Classes="InspectorRollout" Header="Playback" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <TextBlock x:Name="AnimationStatusLabel" Text="{Binding Motion.StatusLabel}" Foreground="#A3AFBD"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <ToggleButton x:Name="AnimationPlayToggle"
+                                                      Content="{Binding Motion.PlayLabel}"
+                                                      Classes="InspectorButton"
+                                                      IsEnabled="{Binding Motion.CanPlay}"
+                                                      IsChecked="{Binding Motion.IsPlaying}"/>
+                                        <Button x:Name="AnimationResetButton"
+                                                Content="Reset"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.AnimationResetCommand}"
+                                                IsEnabled="{Binding Motion.CanReset}"/>
+                                    </Grid>
+                                    <CheckBox x:Name="AnimationLoopToggle"
+                                              Content="Loop"
+                                              Foreground="#E8EEF5"
+                                              IsEnabled="{Binding Motion.CanLoop}"
+                                              IsChecked="{Binding Motion.Loop}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="AnimationSpeedLabel" Text="{Binding Motion.SpeedLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="AnimationSpeedSlider"
+                                                Minimum="0.1"
+                                                Maximum="2.0"
+                                                Value="{Binding Motion.Speed}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.25"
+                                                IsEnabled="{Binding Motion.CanAdjustSpeed}"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Timeline" IsExpanded="True">
+                                <StackPanel Spacing="6">
+                                    <TextBlock x:Name="AnimationTimeLabel" Text="{Binding Motion.TimeLabel}" Foreground="#A3AFBD"/>
+                                    <Slider x:Name="AnimationTimeSlider"
+                                            Minimum="0"
+                                            Maximum="{Binding Motion.TimeMax}"
+                                            Value="{Binding Motion.Time}"
+                                            TickFrequency="0.1"
+                                            SmallChange="0.1"
+                                            LargeChange="0.25"
+                                            IsEnabled="{Binding Motion.CanScrub}"/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Classes="CommandTab" ToolTip.Tip="Utilities">
+                    <TabItem.Header>
+                        <StackPanel Spacing="2" HorizontalAlignment="Center">
+                            <Viewbox Width="18" Height="18">
+                                <Path Classes="CommandTabIcon" Data="M2,6 H10 M6,2 V10"/>
+                            </Viewbox>
+                            <TextBlock Classes="CommandTabLabel" Text="Utilities"/>
+                        </StackPanel>
+                    </TabItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  ScrollViewer.IsScrollChainingEnabled="False"
+                                  Padding="10">
+                        <StackPanel Spacing="8">
+                            <Expander Classes="InspectorRollout" Header="Viewport" IsExpanded="True">
+                                <StackPanel Spacing="8">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="SectionTitle" Text="Viewport effects"/>
+                                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                                            <CheckBox x:Name="ShadowToggle" Grid.Row="0" Grid.Column="0" Content="Shadows" IsChecked="{Binding Options.ShadowEnabled, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                            <CheckBox x:Name="SsaoToggle" Grid.Row="0" Grid.Column="1" Content="SSAO" IsChecked="{Binding Options.SsaoEnabled, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                            <CheckBox x:Name="PickDebugToggle" Grid.Row="1" Grid.Column="0" Content="Pick debug" IsChecked="{Binding Options.PickDebugEnabled, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                            <CheckBox x:Name="StatsToggle" Grid.Row="1" Grid.Column="1" Content="Show stats" IsChecked="{Binding Options.ShowStats, Mode=TwoWay}" Foreground="#E8EEF5"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Classes="SectionLabel" Text="Pick accel" VerticalAlignment="Center"/>
+                                        <ComboBox x:Name="PickAccelCombo" Grid.Column="1" Classes="InspectorCombo" Width="160" SelectedIndex="{Binding Options.PickAccelIndex, Mode=TwoWay}">
+                                            <ComboBoxItem Content="Auto"/>
+                                            <ComboBoxItem Content="BVH"/>
+                                            <ComboBoxItem Content="Uniform grid"/>
+                                        </ComboBox>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Quality" IsExpanded="False">
+                                <StackPanel Spacing="6">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="MeshPrecisionLabel" Text="{Binding Options.MeshPrecisionLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="MeshPrecisionSlider"
+                                                Minimum="4"
+                                                Maximum="64"
+                                                Value="{Binding Options.MeshPrecision, Mode=TwoWay}"
+                                                TickFrequency="4"
+                                                SmallChange="1"
+                                                LargeChange="4"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="SubdivisionLabel" Text="{Binding Options.SubdivisionLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="SubdivisionSlider"
+                                                Minimum="4"
+                                                Maximum="256"
+                                                Value="{Binding Options.Subdivision, Mode=TwoWay}"
+                                                TickFrequency="8"
+                                                SmallChange="1"
+                                                LargeChange="8"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Material Editor" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="{Binding Material.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Material.BaseColorLabel}" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="R" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.BaseColorR, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Grid.Row="1" Text="G" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.BaseColorG, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Grid.Row="2" Text="B" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.BaseColorB, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                        </Grid>
+                                        <ComboBox x:Name="BaseColorSourceCombo"
+                                                  Classes="InspectorCombo"
+                                                  ItemsSource="{Binding Material.BaseColorSources}"
+                                                  SelectedIndex="{Binding Material.BaseColorSourceIndex, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                    <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Material.MetallicLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="MetallicSlider"
+                                                Minimum="0"
+                                                Maximum="1"
+                                                Value="{Binding Material.Metallic, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                        <ComboBox x:Name="MetallicSourceCombo"
+                                                  Classes="InspectorCombo"
+                                                  ItemsSource="{Binding Material.MetallicSources}"
+                                                  SelectedIndex="{Binding Material.MetallicSourceIndex, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                    <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Material.RoughnessLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="RoughnessSlider"
+                                                Minimum="0"
+                                                Maximum="1"
+                                                Value="{Binding Material.Roughness, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                        <ComboBox x:Name="RoughnessSourceCombo"
+                                                  Classes="InspectorCombo"
+                                                  ItemsSource="{Binding Material.RoughnessSources}"
+                                                  SelectedIndex="{Binding Material.RoughnessSourceIndex, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                    <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Material.EmissiveLabel}" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="R" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.EmissiveR, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Grid.Row="1" Text="G" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.EmissiveG, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Grid.Row="2" Text="B" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.EmissiveB, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                        </Grid>
+                                        <ComboBox x:Name="EmissiveSourceCombo"
+                                                  Classes="InspectorCombo"
+                                                  ItemsSource="{Binding Material.EmissiveSources}"
+                                                  SelectedIndex="{Binding Material.EmissiveSourceIndex, Mode=TwoWay}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                    <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <TextBlock Classes="SectionTitle" Text="Shader Graph"/>
+                                    <TextBlock Classes="SectionLabel" Text="Click output then input to connect. Click input to clear."/>
+                                    <controls:MaterialGraphCanvasControl DataContext="{Binding Material.Canvas}" Height="320"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add Color"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Material.AddColorNodeCommand}"/>
+                                        <Button Content="Add Float"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Material.AddFloatNodeCommand}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Material.AddAddNodeCommand}"/>
+                                        <Button Content="Add Multiply"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Material.AddMultiplyNodeCommand}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add Texture"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Material.AddTextureNodeCommand}"/>
+                                        <Button Content="Add Sample"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Material.AddTextureSampleNodeCommand}"/>
+                                    </Grid>
+                                    <Button Content="Add Normal Map"
+                                            Classes="InspectorButton"
+                                            Command="{Binding Material.AddNormalMapNodeCommand}"/>
+                                </StackPanel>
+                            </Expander>
+                        </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+        </Grid>
+    </Border>
+</UserControl>

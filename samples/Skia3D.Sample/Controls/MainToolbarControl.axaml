@@ -1,0 +1,109 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Skia3D.Sample.Controls"
+             xmlns:primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.MainToolbarControl"
+             x:DataType="vm:EditorToolbarViewModel">
+    <Border Classes="MaxToolbar">
+        <Grid>
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="6">
+                <Button Classes="MaxToolbarIcon" ToolTip.Tip="Open" Command="{Binding Actions.LoadObjCommand}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M4,7 H9 L11,9 H20 V18 H4 Z M4,9 H20"/>
+                    </Viewbox>
+                </Button>
+                <ToggleButton Classes="MaxToolbarIcon"
+                              ToolTip.Tip="Command Panel"
+                              IsChecked="{Binding Workspace.ShowCommandPanel, Mode=TwoWay}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M4,4 H20 V18 H4 Z M10,4 V18"/>
+                    </Viewbox>
+                </ToggleButton>
+                <Button Classes="MaxToolbarIcon" ToolTip.Tip="Save Scene" Command="{Binding Actions.SaveSceneCommand}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M4,4 H20 V18 H4 Z M7,4 V8 H17 V4"/>
+                    </Viewbox>
+                </Button>
+                <Button Classes="MaxToolbarIcon" ToolTip.Tip="Undo" Command="{Binding Actions.UndoCommand}" IsEnabled="{Binding Editor.CanUndo}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M10,6 L5,11 L10,16 M5,11 H17"/>
+                    </Viewbox>
+                </Button>
+                <Button Classes="MaxToolbarIcon" ToolTip.Tip="Redo" Command="{Binding Actions.RedoCommand}" IsEnabled="{Binding Editor.CanRedo}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M14,6 L19,11 L14,16 M5,11 H19"/>
+                    </Viewbox>
+                </Button>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="8">
+                <Border Classes="MaxToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Transform" Classes="MaxToolbarLabel"/>
+                        <ComboBox Classes="MaxToolbarCombo" Width="110" SelectedIndex="{Binding Options.GizmoModeIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="Move"/>
+                            <ComboBoxItem Content="Rotate"/>
+                            <ComboBoxItem Content="Scale"/>
+                        </ComboBox>
+                        <ComboBox Classes="MaxToolbarCombo" Width="70" SelectedIndex="{Binding Options.GizmoAxisIndex, Mode=TwoWay}">
+                            <ComboBoxItem Content="Free"/>
+                            <ComboBoxItem Content="X"/>
+                            <ComboBoxItem Content="Y"/>
+                            <ComboBoxItem Content="Z"/>
+                            <ComboBoxItem Content="XY"/>
+                            <ComboBoxItem Content="XZ"/>
+                            <ComboBoxItem Content="YZ"/>
+                        </ComboBox>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Snap" IsChecked="{Binding Options.GizmoSnapEnabled, Mode=TwoWay}">
+                            <TextBlock Text="S" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+                <Border Classes="MaxToolbarGroup">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Viewport" Classes="MaxToolbarLabel"/>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Grid" IsChecked="{Binding Options.GridEnabled, Mode=TwoWay}">
+                            <TextBlock Text="G" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Wireframe" IsChecked="{Binding Options.WireframeEnabled, Mode=TwoWay}">
+                            <TextBlock Text="W" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Lighting" IsChecked="{Binding Options.LightingEnabled, Mode=TwoWay}">
+                            <TextBlock Text="L" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="MaxToolbarIcon" ToolTip.Tip="Pause" IsChecked="{Binding Options.PauseEnabled, Mode=TwoWay}">
+                            <TextBlock Text="P" Classes="MaxToolbarGlyph"/>
+                        </ToggleButton>
+                    </StackPanel>
+                </Border>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="Workspaces" Classes="MaxToolbarLabel" VerticalAlignment="Center"/>
+                <ComboBox Classes="MaxToolbarCombo"
+                          x:Name="WorkspaceCombo"
+                          Width="140"
+                          ItemsSource="{Binding Workspace.Workspaces}"
+                          SelectedItem="{Binding Workspace.SelectedWorkspace, Mode=TwoWay}"/>
+                <ToggleButton Classes="MaxToolbarIcon"
+                              ToolTip.Tip="Workspace Manager"
+                              IsChecked="{Binding Workspace.IsManagerOpen, Mode=TwoWay}">
+                    <Viewbox Width="14" Height="14">
+                        <Path Classes="MaxToolbarGlyph" Data="M4,4 H20 V20 H4 Z M12,4 V20"/>
+                    </Viewbox>
+                </ToggleButton>
+                </StackPanel>
+            </DockPanel>
+            <primitives:Popup IsOpen="{Binding Workspace.IsManagerOpen, Mode=TwoWay}"
+                              PlacementTarget="{Binding ElementName=WorkspaceCombo}"
+                              Placement="Bottom"
+                              HorizontalOffset="0"
+                              VerticalOffset="4"
+                              IsLightDismissEnabled="True">
+                <controls:WorkspaceManagerControl DataContext="{Binding Workspace}"/>
+            </primitives:Popup>
+        </Grid>
+    </Border>
+</UserControl>
