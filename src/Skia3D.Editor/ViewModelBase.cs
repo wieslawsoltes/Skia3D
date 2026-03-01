@@ -1,14 +1,17 @@
-using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using ReactiveUI;
 
 namespace Skia3D.Editor;
 
-public abstract class ViewModelBase : INotifyPropertyChanged
+public abstract class ViewModelBase : ReactiveObject
 {
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     protected void RaisePropertyChanged([CallerMemberName] string? propertyName = null)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        if (string.IsNullOrWhiteSpace(propertyName))
+        {
+            return;
+        }
+
+        IReactiveObjectExtensions.RaisePropertyChanged(this, propertyName);
     }
 }

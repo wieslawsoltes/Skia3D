@@ -85,21 +85,35 @@ public sealed class MaterialOutputNode : ShaderNode
 {
     public const string BaseColorInput = "BaseColor";
     public const string BaseColorTextureInput = "BaseColorTexture";
+    public const string BaseColorTextureStrengthInput = "BaseColorTextureStrength";
     public const string MetallicInput = "Metallic";
     public const string RoughnessInput = "Roughness";
+    public const string MetallicRoughnessTextureInput = "MetallicRoughnessTexture";
+    public const string MetallicRoughnessStrengthInput = "MetallicRoughnessStrength";
     public const string NormalTextureInput = "NormalTexture";
     public const string NormalStrengthInput = "NormalStrength";
     public const string EmissiveInput = "Emissive";
+    public const string EmissiveTextureInput = "EmissiveTexture";
+    public const string EmissiveStrengthInput = "EmissiveStrength";
+    public const string OcclusionTextureInput = "OcclusionTexture";
+    public const string OcclusionStrengthInput = "OcclusionStrength";
 
     public MaterialOutputNode(Guid? id = null) : base("Material Output", id)
     {
         Inputs.Add(new ShaderPort(BaseColorInput, ShaderValueType.Color, ShaderValue.Color(new Vector4(0.8f, 0.8f, 0.8f, 1f))));
         Inputs.Add(new ShaderPort(BaseColorTextureInput, ShaderValueType.Texture, ShaderValue.TextureValue(null)));
+        Inputs.Add(new ShaderPort(BaseColorTextureStrengthInput, ShaderValueType.Float, ShaderValue.Float(1f)));
         Inputs.Add(new ShaderPort(MetallicInput, ShaderValueType.Float, ShaderValue.Float(0f)));
         Inputs.Add(new ShaderPort(RoughnessInput, ShaderValueType.Float, ShaderValue.Float(0.6f)));
+        Inputs.Add(new ShaderPort(MetallicRoughnessTextureInput, ShaderValueType.Texture, ShaderValue.TextureValue(null)));
+        Inputs.Add(new ShaderPort(MetallicRoughnessStrengthInput, ShaderValueType.Float, ShaderValue.Float(1f)));
         Inputs.Add(new ShaderPort(NormalTextureInput, ShaderValueType.Texture, ShaderValue.TextureValue(null)));
         Inputs.Add(new ShaderPort(NormalStrengthInput, ShaderValueType.Float, ShaderValue.Float(1f)));
         Inputs.Add(new ShaderPort(EmissiveInput, ShaderValueType.Color, ShaderValue.Color(new Vector4(0f, 0f, 0f, 1f))));
+        Inputs.Add(new ShaderPort(EmissiveTextureInput, ShaderValueType.Texture, ShaderValue.TextureValue(null)));
+        Inputs.Add(new ShaderPort(EmissiveStrengthInput, ShaderValueType.Float, ShaderValue.Float(1f)));
+        Inputs.Add(new ShaderPort(OcclusionTextureInput, ShaderValueType.Texture, ShaderValue.TextureValue(null)));
+        Inputs.Add(new ShaderPort(OcclusionStrengthInput, ShaderValueType.Float, ShaderValue.Float(1f)));
     }
 
     public override ShaderValue EvaluateOutput(string outputName, ShaderGraphEvaluator evaluator)

@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="ReactiveUI" Version="19.4.1" />
     <PackageReference Include="SkiaSharp" Version="2.88.9" />
   </ItemGroup>
 

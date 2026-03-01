@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\src\Skia3D.IO\Skia3D.IO.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Scene\Skia3D.Scene.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Animation\Skia3D.Animation.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.ShaderGraph\Skia3D.ShaderGraph.csproj" />
   </ItemGroup>
 
 </Project>

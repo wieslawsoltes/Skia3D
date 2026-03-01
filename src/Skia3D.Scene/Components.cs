@@ -112,12 +112,21 @@ public sealed class MeshRenderer : SceneComponent
             Metallic = result.Metallic,
             Roughness = result.Roughness,
             EmissiveColor = ToColor(result.Emissive),
-            EmissiveStrength = 1f,
             BaseColorTexture = result.BaseColorTexture,
             BaseColorSampler = result.BaseColorSampler,
+            BaseColorTextureStrength = result.BaseColorTextureStrength,
+            MetallicRoughnessTexture = result.MetallicRoughnessTexture,
+            MetallicRoughnessSampler = result.MetallicRoughnessSampler,
+            MetallicRoughnessTextureStrength = result.MetallicRoughnessStrength,
             NormalTexture = result.NormalTexture,
             NormalSampler = result.NormalSampler,
             NormalStrength = result.NormalStrength,
+            EmissiveTexture = result.EmissiveTexture,
+            EmissiveSampler = result.EmissiveSampler,
+            EmissiveStrength = result.EmissiveStrength,
+            OcclusionTexture = result.OcclusionTexture,
+            OcclusionSampler = result.OcclusionSampler,
+            OcclusionStrength = result.OcclusionStrength,
             ShadingModel = MaterialShadingModel.MetallicRoughness
         };
 

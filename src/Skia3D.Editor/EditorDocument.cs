@@ -63,6 +63,36 @@ public sealed class EditorDocument
         }
     }
 
+    public void UnregisterInstance(MeshInstance instance)
+    {
+        if (instance is null)
+        {
+            throw new ArgumentNullException(nameof(instance));
+        }
+
+        _instanceNodes.Remove(instance);
+        _editableMeshes.Remove(instance);
+    }
+
+    public void UnregisterSceneRecursive(SceneNode node)
+    {
+        if (node is null)
+        {
+            throw new ArgumentNullException(nameof(node));
+        }
+
+        var instance = node.MeshInstance;
+        if (instance != null)
+        {
+            UnregisterInstance(instance);
+        }
+
+        foreach (var child in node.Children)
+        {
+            UnregisterSceneRecursive(child);
+        }
+    }
+
     public bool TryGetEditableMesh(MeshInstance instance, out EditableMesh editable)
     {
         return _editableMeshes.TryGetValue(instance, out editable!);

@@ -13,9 +13,19 @@ public readonly record struct ShaderGraphResult(
     Vector4 Emissive,
     Texture2D? BaseColorTexture,
     TextureSampler? BaseColorSampler,
+    float BaseColorTextureStrength,
+    Texture2D? MetallicRoughnessTexture,
+    TextureSampler? MetallicRoughnessSampler,
+    float MetallicRoughnessStrength,
     Texture2D? NormalTexture,
     TextureSampler? NormalSampler,
-    float NormalStrength);
+    float NormalStrength,
+    Texture2D? EmissiveTexture,
+    TextureSampler? EmissiveSampler,
+    float EmissiveStrength,
+    Texture2D? OcclusionTexture,
+    TextureSampler? OcclusionSampler,
+    float OcclusionStrength);
 
 public sealed class ShaderPort
 {
@@ -162,13 +172,48 @@ public sealed class ShaderGraph
         var baseTextureValue = evaluator.GetInputValue(OutputNode, MaterialOutputNode.BaseColorTextureInput);
         var baseTexture = baseTextureValue.AsTexture() ?? baseColorValue.AsTexture();
         var baseSampler = baseTextureValue.Sampler ?? baseColorValue.Sampler;
+        var baseTextureStrength = evaluator.GetInputValue(OutputNode, MaterialOutputNode.BaseColorTextureStrengthInput).AsFloat(1f);
+
+        var metallicRoughnessTextureValue = evaluator.GetInputValue(OutputNode, MaterialOutputNode.MetallicRoughnessTextureInput);
+        var metallicRoughnessTexture = metallicRoughnessTextureValue.AsTexture();
+        var metallicRoughnessSampler = metallicRoughnessTextureValue.Sampler;
+        var metallicRoughnessStrength = evaluator.GetInputValue(OutputNode, MaterialOutputNode.MetallicRoughnessStrengthInput).AsFloat(1f);
 
         var normalTextureValue = evaluator.GetInputValue(OutputNode, MaterialOutputNode.NormalTextureInput);
         var normalTexture = normalTextureValue.AsTexture();
         var normalSampler = normalTextureValue.Sampler;
         var normalStrength = evaluator.GetInputValue(OutputNode, MaterialOutputNode.NormalStrengthInput).AsFloat(1f);
 
-        return new ShaderGraphResult(baseColor, metallic, roughness, emissive, baseTexture, baseSampler, normalTexture, normalSampler, normalStrength);
+        var emissiveTextureValue = evaluator.GetInputValue(OutputNode, MaterialOutputNode.EmissiveTextureInput);
+        var emissiveTexture = emissiveTextureValue.AsTexture();
+        var emissiveSampler = emissiveTextureValue.Sampler;
+        var emissiveStrength = evaluator.GetInputValue(OutputNode, MaterialOutputNode.EmissiveStrengthInput).AsFloat(1f);
+
+        var occlusionTextureValue = evaluator.GetInputValue(OutputNode, MaterialOutputNode.OcclusionTextureInput);
+        var occlusionTexture = occlusionTextureValue.AsTexture();
+        var occlusionSampler = occlusionTextureValue.Sampler;
+        var occlusionStrength = evaluator.GetInputValue(OutputNode, MaterialOutputNode.OcclusionStrengthInput).AsFloat(1f);
+
+        return new ShaderGraphResult(
+            baseColor,
+            metallic,
+            roughness,
+            emissive,
+            baseTexture,
+            baseSampler,
+            baseTextureStrength,
+            metallicRoughnessTexture,
+            metallicRoughnessSampler,
+            metallicRoughnessStrength,
+            normalTexture,
+            normalSampler,
+            normalStrength,
+            emissiveTexture,
+            emissiveSampler,
+            emissiveStrength,
+            occlusionTexture,
+            occlusionSampler,
+            occlusionStrength);
     }
 
     public ShaderNode? FindNode(Guid id)

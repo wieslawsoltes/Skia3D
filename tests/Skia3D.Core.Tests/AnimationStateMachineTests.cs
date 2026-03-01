@@ -1,6 +1,7 @@
 using System.Numerics;
 using Skia3D.Animation;
 using Skia3D.Scene;
+using SceneGraph = Skia3D.Scene.Scene;
 using Xunit;
 
 namespace Skia3D.Core.Tests;
@@ -10,7 +11,7 @@ public sealed class AnimationStateMachineTests
     [Fact]
     public void AnimationStateMachine_TriggerSwitchesStates()
     {
-        var scene = new Scene();
+        var scene = new SceneGraph();
         var node = new SceneNode("Root");
         scene.AddRoot(node);
 

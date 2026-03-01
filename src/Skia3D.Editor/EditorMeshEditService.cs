@@ -144,6 +144,83 @@ public sealed class EditorMeshEditService
         return false;
     }
 
+    public bool ApplyTransformToVertices(Matrix4x4 transform, IReadOnlyCollection<int> vertices, string name)
+    {
+        if (!_mode.EditMode)
+        {
+            return false;
+        }
+
+        if (vertices == null || vertices.Count == 0)
+        {
+            return false;
+        }
+
+        if (!TryGetEditableSelection(out var instance, out var editable))
+        {
+            return false;
+        }
+
+        if (Options.ProportionalEnabled)
+        {
+            var command = new MeshSnapshotCommand(editable, mesh =>
+            {
+                return ProportionalEditing.ApplyTransform(mesh, transform, vertices, Options.ProportionalRadius, Options.ProportionalFalloff) > 0;
+            }, name);
+
+            if (_commands.Do(command))
+            {
+                RebuildEditableInstance(instance, editable, clearSubSelection: false);
+                CommandStateChanged?.Invoke();
+                return true;
+            }
+
+            return false;
+        }
+
+        var simpleCommand = new TransformVerticesCommand(editable, transform, vertices, name);
+        if (_commands.Do(simpleCommand))
+        {
+            RebuildEditableInstance(instance, editable, clearSubSelection: false);
+            CommandStateChanged?.Invoke();
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool ApplyTransformToSelection(Vector3 translation, Quaternion rotation, Vector3 scale, string name)
+    {
+        if (_selection.ObjectSelection.Count == 0)
+        {
+            return false;
+        }
+
+        var nodes = new List<SceneNode>();
+        foreach (var instance in _selection.ObjectSelection.Items)
+        {
+            if (_document.TryGetNode(instance, out var node) && !nodes.Contains(node))
+            {
+                nodes.Add(node);
+            }
+        }
+
+        if (nodes.Count == 0)
+        {
+            return false;
+        }
+
+        var command = new MultiNodeTransformCommand(nodes, translation, rotation, scale, name);
+        if (_commands.Do(command))
+        {
+            CommandStateChanged?.Invoke();
+            MeshEdited?.Invoke();
+            return true;
+        }
+
+        return false;
+    }
+
     public bool CenterPivot()
     {
         if (!TryGetEditableSelection(out var instance, out var editable))
@@ -826,6 +903,134 @@ public sealed class EditorMeshEditService
         return true;
     }
 
+    public bool ConvertSelectionToVertices()
+    {
+        if (!_mode.EditMode || !TryGetEditableSelection(out _, out var editable))
+        {
+            return false;
+        }
+
+        HashSet<int> vertices;
+        if (!_selection.VertexSelection.IsEmpty)
+        {
+            vertices = new HashSet<int>(_selection.VertexSelection.Items);
+        }
+        else if (!_selection.EdgeSelection.IsEmpty)
+        {
+            vertices = new HashSet<int>();
+            foreach (var edge in _selection.EdgeSelection.Items)
+            {
+                vertices.Add(edge.A);
+                vertices.Add(edge.B);
+            }
+        }
+        else if (!_selection.FaceSelection.IsEmpty)
+        {
+            vertices = CollectVerticesFromFaces(editable, _selection.FaceSelection.Items);
+        }
+        else
+        {
+            return false;
+        }
+
+        if (vertices.Count == 0)
+        {
+            return false;
+        }
+
+        _selection.VertexSelection.ReplaceWith(vertices);
+        _selection.EdgeSelection.Clear();
+        _selection.FaceSelection.Clear();
+        _mode.EditMode = true;
+        _mode.VertexSelect = true;
+        _mode.EdgeSelect = false;
+        _mode.FaceSelect = false;
+        SelectionChanged?.Invoke();
+        return true;
+    }
+
+    public bool ConvertSelectionToEdges()
+    {
+        if (!_mode.EditMode || !TryGetEditableSelection(out _, out var editable))
+        {
+            return false;
+        }
+
+        HashSet<EdgeKey> edges;
+        if (!_selection.EdgeSelection.IsEmpty)
+        {
+            edges = new HashSet<EdgeKey>(_selection.EdgeSelection.Items);
+        }
+        else if (!_selection.FaceSelection.IsEmpty)
+        {
+            edges = CollectEdgesFromFaces(editable, _selection.FaceSelection.Items);
+        }
+        else if (!_selection.VertexSelection.IsEmpty)
+        {
+            edges = CollectEdgesFromVertices(editable, _selection.VertexSelection.Items);
+        }
+        else
+        {
+            return false;
+        }
+
+        if (edges.Count == 0)
+        {
+            return false;
+        }
+
+        _selection.EdgeSelection.ReplaceWith(edges);
+        _selection.VertexSelection.Clear();
+        _selection.FaceSelection.Clear();
+        _mode.EditMode = true;
+        _mode.VertexSelect = false;
+        _mode.EdgeSelect = true;
+        _mode.FaceSelect = false;
+        SelectionChanged?.Invoke();
+        return true;
+    }
+
+    public bool ConvertSelectionToFaces()
+    {
+        if (!_mode.EditMode || !TryGetEditableSelection(out _, out var editable))
+        {
+            return false;
+        }
+
+        HashSet<int> faces;
+        if (!_selection.FaceSelection.IsEmpty)
+        {
+            faces = new HashSet<int>(_selection.FaceSelection.Items);
+        }
+        else if (!_selection.EdgeSelection.IsEmpty)
+        {
+            faces = CollectFacesFromEdges(editable, _selection.EdgeSelection.Items);
+        }
+        else if (!_selection.VertexSelection.IsEmpty)
+        {
+            faces = CollectFacesFromVertices(editable, _selection.VertexSelection.Items);
+        }
+        else
+        {
+            return false;
+        }
+
+        if (faces.Count == 0)
+        {
+            return false;
+        }
+
+        _selection.FaceSelection.ReplaceWith(faces);
+        _selection.VertexSelection.Clear();
+        _selection.EdgeSelection.Clear();
+        _mode.EditMode = true;
+        _mode.VertexSelect = false;
+        _mode.EdgeSelect = false;
+        _mode.FaceSelect = true;
+        SelectionChanged?.Invoke();
+        return true;
+    }
+
     private bool TryBridgeSelectedEdgeLoops(EditableMesh editable, out List<EdgeKey> loopA, out List<EdgeKey> loopB)
     {
         loopA = new List<EdgeKey>();
@@ -1494,6 +1699,97 @@ public sealed class EditorMeshEditService
         }
     }
 
+    private sealed class MultiNodeTransformCommand : IEditCommand
+    {
+        private readonly SceneNode[] _nodes;
+        private readonly Vector3 _translation;
+        private readonly Quaternion _rotation;
+        private readonly Vector3 _scale;
+        private readonly string _name;
+        private bool _initialized;
+        private Vector3[]? _beforePositions;
+        private Quaternion[]? _beforeRotations;
+        private Vector3[]? _beforeScales;
+        private Vector3[]? _afterPositions;
+        private Quaternion[]? _afterRotations;
+        private Vector3[]? _afterScales;
+
+        public MultiNodeTransformCommand(IReadOnlyList<SceneNode> nodes, Vector3 translation, Quaternion rotation, Vector3 scale, string name)
+        {
+            if (nodes is null)
+            {
+                throw new ArgumentNullException(nameof(nodes));
+            }
+
+            _nodes = new SceneNode[nodes.Count];
+            for (int i = 0; i < nodes.Count; i++)
+            {
+                _nodes[i] = nodes[i] ?? throw new ArgumentException("Node list contains null.", nameof(nodes));
+            }
+
+            _translation = translation;
+            _rotation = rotation;
+            _scale = scale;
+            _name = string.IsNullOrWhiteSpace(name) ? "Transform Selection" : name;
+        }
+
+        public string Name => _name;
+
+        public bool Execute()
+        {
+            if (!_initialized)
+            {
+                int count = _nodes.Length;
+                _beforePositions = new Vector3[count];
+                _beforeRotations = new Quaternion[count];
+                _beforeScales = new Vector3[count];
+                _afterPositions = new Vector3[count];
+                _afterRotations = new Quaternion[count];
+                _afterScales = new Vector3[count];
+
+                for (int i = 0; i < count; i++)
+                {
+                    var node = _nodes[i];
+                    _beforePositions[i] = node.Transform.LocalPosition;
+                    _beforeRotations[i] = node.Transform.LocalRotation;
+                    _beforeScales[i] = node.Transform.LocalScale;
+                    _afterPositions[i] = _beforePositions[i] + _translation;
+                    _afterRotations[i] = Quaternion.Normalize(_rotation * _beforeRotations[i]);
+                    _afterScales[i] = new Vector3(
+                        _beforeScales[i].X * _scale.X,
+                        _beforeScales[i].Y * _scale.Y,
+                        _beforeScales[i].Z * _scale.Z);
+                }
+
+                _initialized = true;
+            }
+
+            Apply(_afterPositions!, _afterRotations!, _afterScales!);
+            return true;
+        }
+
+        public void Undo()
+        {
+            if (!_initialized)
+            {
+                return;
+            }
+
+            Apply(_beforePositions!, _beforeRotations!, _beforeScales!);
+        }
+
+        private void Apply(Vector3[] positions, Quaternion[] rotations, Vector3[] scales)
+        {
+            for (int i = 0; i < _nodes.Length; i++)
+            {
+                var node = _nodes[i];
+                node.Transform.LocalPosition = positions[i];
+                node.Transform.LocalRotation = rotations[i];
+                node.Transform.LocalScale = scales[i];
+            }
+        }
+    }
+
     private IReadOnlyCollection<int>? GetUvSelectionVertices(EditableMesh mesh)
     {
         if (_mode.VertexSelect && !_selection.VertexSelection.IsEmpty)
@@ -1627,6 +1923,118 @@ public sealed class EditorMeshEditService
         }
 
         return vertices;
+    }
+
+    private static HashSet<EdgeKey> CollectEdgesFromFaces(EditableMesh mesh, IReadOnlyCollection<int> faces)
+    {
+        var adjacency = MeshAdjacency.Build(mesh);
+        var edges = new HashSet<EdgeKey>();
+        foreach (var face in faces)
+        {
+            if ((uint)face >= (uint)adjacency.FaceEdges.Count)
+            {
+                continue;
+            }
+
+            var faceEdges = adjacency.FaceEdges[face];
+            for (int i = 0; i < faceEdges.Length; i++)
+            {
+                edges.Add(faceEdges[i]);
+            }
+        }
+
+        return edges;
+    }
+
+    private static HashSet<EdgeKey> CollectEdgesFromVertices(EditableMesh mesh, IReadOnlyCollection<int> vertices)
+    {
+        if (vertices.Count == 0)
+        {
+            return new HashSet<EdgeKey>();
+        }
+
+        var vertexSet = vertices as HashSet<int> ?? new HashSet<int>(vertices);
+        var adjacency = MeshAdjacency.Build(mesh);
+        var edges = new HashSet<EdgeKey>();
+        foreach (var edge in adjacency.Edges.Keys)
+        {
+            if (vertexSet.Contains(edge.A) && vertexSet.Contains(edge.B))
+            {
+                edges.Add(edge);
+            }
+        }
+
+        return edges;
+    }
+
+    private static HashSet<int> CollectFacesFromVertices(EditableMesh mesh, IReadOnlyCollection<int> vertices)
+    {
+        if (vertices.Count == 0)
+        {
+            return new HashSet<int>();
+        }
+
+        var vertexSet = vertices as HashSet<int> ?? new HashSet<int>(vertices);
+        var indices = mesh.Indices;
+        var triangleCount = indices.Count / 3;
+        var faces = new HashSet<int>();
+
+        for (int face = 0; face < triangleCount; face++)
+        {
+            int baseIndex = face * 3;
+            if ((uint)(baseIndex + 2) >= (uint)indices.Count)
+            {
+                break;
+            }
+
+            int i0 = indices[baseIndex];
+            int i1 = indices[baseIndex + 1];
+            int i2 = indices[baseIndex + 2];
+            if (vertexSet.Contains(i0) && vertexSet.Contains(i1) && vertexSet.Contains(i2))
+            {
+                faces.Add(face);
+            }
+        }
+
+        return faces;
+    }
+
+    private static HashSet<int> CollectFacesFromEdges(EditableMesh mesh, IReadOnlyCollection<EdgeKey> edges)
+    {
+        if (edges.Count == 0)
+        {
+            return new HashSet<int>();
+        }
+
+        var edgeSet = edges as HashSet<EdgeKey> ?? new HashSet<EdgeKey>(edges);
+        var adjacency = MeshAdjacency.Build(mesh);
+        var faces = new HashSet<int>();
+
+        for (int face = 0; face < adjacency.FaceEdges.Count; face++)
+        {
+            var faceEdges = adjacency.FaceEdges[face];
+            if (faceEdges.Length == 0)
+            {
+                continue;
+            }
+
+            bool all = true;
+            for (int i = 0; i < faceEdges.Length; i++)
+            {
+                if (!edgeSet.Contains(faceEdges[i]))
+                {
+                    all = false;
+                    break;
+                }
+            }
+
+            if (all)
+            {
+                faces.Add(face);
+            }
+        }
+
+        return faces;
     }
 
     private static bool TryGetSelectionBounds(EditableMesh mesh, IReadOnlyCollection<int>? selection, out Vector3 min, out Vector3 max)
