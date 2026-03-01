@@ -16,7 +16,8 @@ public sealed class RendererRaycastTests
             new Vector3(1f, 0f, 0f),
             new Vector3(0f, 1f, 0f)
         };
-        var indices = new[] { 0, 1, 2 };
+        // Keep winding front-facing for +Z ray when backface culling is enabled.
+        var indices = new[] { 0, 2, 1 };
         var mesh = MeshFactory.CreateFromData(positions, indices, colors: new[] { SKColors.White, SKColors.White, SKColors.White });
         var instance = new MeshInstance(mesh)
         {
