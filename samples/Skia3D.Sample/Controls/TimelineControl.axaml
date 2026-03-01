@@ -2,44 +2,50 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
              x:Class="Skia3D.Sample.Controls.TimelineControl"
-             x:DataType="vm:MainWindowViewModel">
+             x:DataType="vm:TimelineDockContext">
     <Border Classes="MaxTimeline">
         <Grid ColumnDefinitions="Auto,* ,Auto" RowDefinitions="Auto,Auto" VerticalAlignment="Center">
             <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Spacing="2">
-                <TextBlock Text="{Binding CommandPanel.Motion.StatusLabel}" Classes="MaxTimelineLabel"/>
+                <TextBlock Text="{Binding Motion.StatusLabel}" Classes="MaxTimelineLabel"/>
                 <Slider Minimum="0"
-                        Maximum="{Binding CommandPanel.Motion.TimeMax}"
-                        Value="{Binding CommandPanel.Motion.Time}"
-                        IsEnabled="{Binding CommandPanel.Motion.CanScrub}"
+                        Maximum="{Binding Motion.TimeMax}"
+                        Value="{Binding Motion.Time}"
+                        IsEnabled="{Binding Motion.CanScrub}"
                         Height="16"/>
             </StackPanel>
             <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
                 <ToggleButton Classes="MaxTimelineButton"
-                              Content="{Binding CommandPanel.Motion.PlayLabel}"
-                              IsChecked="{Binding CommandPanel.Motion.IsPlaying}"
-                              IsEnabled="{Binding CommandPanel.Motion.CanPlay}"/>
+                              Content="{Binding Motion.PlayLabel}"
+                              IsChecked="{Binding Motion.IsPlaying}"
+                              IsEnabled="{Binding Motion.CanPlay}"/>
                 <ToggleButton Classes="MaxTimelineButton"
                               Content="Loop"
-                              IsChecked="{Binding CommandPanel.Motion.Loop}"
-                              IsEnabled="{Binding CommandPanel.Motion.CanLoop}"/>
+                              IsChecked="{Binding Motion.Loop}"
+                              IsEnabled="{Binding Motion.CanLoop}"/>
                 <Button Classes="MaxTimelineButton"
                         Content="Reset"
                         Command="{Binding Actions.AnimationResetCommand}"
-                        IsEnabled="{Binding CommandPanel.Motion.CanReset}"/>
-                <ToggleButton Classes="MaxTimelineButton" Content="Auto Key" IsEnabled="False"/>
-                <ToggleButton Classes="MaxTimelineButton" Content="Set Key" IsEnabled="False"/>
+                        IsEnabled="{Binding Motion.CanReset}"/>
+                <ToggleButton Classes="MaxTimelineButton"
+                              Content="Auto Key"
+                              IsChecked="{Binding Motion.AutoKeyEnabled, Mode=TwoWay}"
+                              IsEnabled="{Binding Motion.CanSetKey}"/>
+                <Button Classes="MaxTimelineButton"
+                        Content="Set Key"
+                        Command="{Binding Motion.SetKeyCommand}"
+                        IsEnabled="{Binding Motion.CanSetKey}"/>
             </StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="1" Spacing="2">
                 <TextBlock Text="Track Bar" Classes="MaxTimelineLabel"/>
                 <Slider Minimum="0"
-                        Maximum="1"
-                        Value="0"
-                        IsEnabled="False"
+                        Maximum="{Binding Motion.TimeMax}"
+                        Value="{Binding Motion.Time}"
+                        IsEnabled="{Binding Motion.CanScrub}"
                         Height="14"/>
             </StackPanel>
             <StackPanel Grid.Row="1" Grid.Column="2" Spacing="2" HorizontalAlignment="Right">
-                <TextBlock Text="{Binding CommandPanel.Motion.TimeLabel}" Classes="MaxTimelineLabel"/>
-                <TextBlock Text="{Binding CommandPanel.Motion.SpeedLabel}" Classes="MaxTimelineLabel"/>
+                <TextBlock Text="{Binding Motion.TimeLabel}" Classes="MaxTimelineLabel"/>
+                <TextBlock Text="{Binding Motion.SpeedLabel}" Classes="MaxTimelineLabel"/>
             </StackPanel>
         </Grid>
     </Border>

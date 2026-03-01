@@ -4,6 +4,10 @@ namespace Skia3D.Sample.ViewModels;
 
 public sealed class CommandStateViewModel : ViewModelBase
 {
+    private bool _canDuplicateSelection;
+    private bool _canDetachFaces;
+    private bool _canConvertSelection;
+    private bool _canNumericTransform;
     private bool _canExtrudeFaces;
     private bool _canBevelFaces;
     private bool _canInsetFaces;
@@ -15,6 +19,10 @@ public sealed class CommandStateViewModel : ViewModelBase
     private bool _canDissolveFaces;
     private bool _canDissolveEdge;
     private bool _canCollapseEdge;
+    private bool _canSelectEdgeLoop;
+    private bool _canSelectEdgeRing;
+    private bool _canGrowSelection;
+    private bool _canShrinkSelection;
     private bool _canCleanupMesh;
     private bool _canSmoothMesh;
     private bool _canSimplifyMesh;
@@ -31,6 +39,66 @@ public sealed class CommandStateViewModel : ViewModelBase
     private bool _canSelectUvIsland;
     private bool _canAssignUvGroup;
     private bool _canClearUvGroup;
+
+    public bool CanDuplicateSelection
+    {
+        get => _canDuplicateSelection;
+        set
+        {
+            if (_canDuplicateSelection == value)
+            {
+                return;
+            }
+
+            _canDuplicateSelection = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanDetachFaces
+    {
+        get => _canDetachFaces;
+        set
+        {
+            if (_canDetachFaces == value)
+            {
+                return;
+            }
+
+            _canDetachFaces = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanConvertSelection
+    {
+        get => _canConvertSelection;
+        set
+        {
+            if (_canConvertSelection == value)
+            {
+                return;
+            }
+
+            _canConvertSelection = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanNumericTransform
+    {
+        get => _canNumericTransform;
+        set
+        {
+            if (_canNumericTransform == value)
+            {
+                return;
+            }
+
+            _canNumericTransform = value;
+            RaisePropertyChanged();
+        }
+    }
 
     public bool CanExtrudeFaces
     {
@@ -193,6 +261,66 @@ public sealed class CommandStateViewModel : ViewModelBase
             }
 
             _canCollapseEdge = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanSelectEdgeLoop
+    {
+        get => _canSelectEdgeLoop;
+        set
+        {
+            if (_canSelectEdgeLoop == value)
+            {
+                return;
+            }
+
+            _canSelectEdgeLoop = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanSelectEdgeRing
+    {
+        get => _canSelectEdgeRing;
+        set
+        {
+            if (_canSelectEdgeRing == value)
+            {
+                return;
+            }
+
+            _canSelectEdgeRing = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanGrowSelection
+    {
+        get => _canGrowSelection;
+        set
+        {
+            if (_canGrowSelection == value)
+            {
+                return;
+            }
+
+            _canGrowSelection = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanShrinkSelection
+    {
+        get => _canShrinkSelection;
+        set
+        {
+            if (_canShrinkSelection == value)
+            {
+                return;
+            }
+
+            _canShrinkSelection = value;
             RaisePropertyChanged();
         }
     }

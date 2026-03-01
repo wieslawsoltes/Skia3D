@@ -71,4 +71,5 @@ public sealed class WorkspaceLayout
     public bool ShowTimeline { get; set; } = true;
     public bool ShowStatusBar { get; set; } = true;
     public bool ShowViewportToolbar { get; set; } = true;
+    public string? DockLayout { get; set; }
 }

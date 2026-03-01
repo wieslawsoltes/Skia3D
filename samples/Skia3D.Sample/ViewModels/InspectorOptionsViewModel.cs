@@ -24,9 +24,32 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
     private double _gizmoScaleSnap = 0.1;
     private bool _depthEnabled;
     private bool _lightingEnabled = true;
+    private bool _imageBasedLightingEnabled = true;
+    private bool _backfaceCullingEnabled = true;
+    private double _environmentIntensity = 0.35;
     private bool _wireframeEnabled;
     private bool _shadowEnabled;
     private bool _ssaoEnabled;
+    private int _shadowMapSize = 512;
+    private double _shadowBias = 0.0025;
+    private double _shadowNormalBias = 0.0015;
+    private double _shadowStrength = 0.7;
+    private int _shadowPcfRadius = 1;
+    private double _ssaoRadius = 6.0;
+    private double _ssaoIntensity = 0.6;
+    private double _ssaoDepthBias = 0.002;
+    private int _ssaoSampleCount = 8;
+    private bool _postProcessingEnabled;
+    private int _toneMappingIndex = 1;
+    private double _postExposure = 1.0;
+    private bool _bloomEnabled;
+    private double _bloomThreshold = 0.75;
+    private double _bloomIntensity = 0.6;
+    private int _bloomRadius = 6;
+    private bool _fxaaEnabled;
+    private double _fxaaEdgeThreshold = 0.125;
+    private double _fxaaEdgeThresholdMin = 0.0312;
+    private double _fxaaSubpixelBlend = 0.75;
     private bool _gridEnabled = true;
     private bool _pauseEnabled;
     private bool _pickDebugEnabled;
@@ -63,6 +86,14 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
     private bool _uvShowIslands;
     private int _uvGroupId = 1;
     private double _proportionalRadius = 2.0;
+    private double _extrudeDistance = 0.6;
+    private double _bevelInset = 0.2;
+    private double _bevelHeight = 0.25;
+    private double _insetDistance = 0.2;
+    private double _weldTolerance = 0.02;
+    private double _nudgeStep = 0.2;
+    private double _renderScale = 1.0;
+    private int _renderWorkerCount = 8;
     private int _meshPrecision = 24;
     private int _subdivision = 64;
     private int _viewportViewIndex;
@@ -72,7 +103,12 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
     {
         SetSelectionToolCommand = new DelegateCommand<object?>(value => SelectionToolIndex = ParseIndex(value));
         SetGizmoModeCommand = new DelegateCommand<object?>(value => GizmoModeIndex = ParseIndex(value));
+        SetGizmoAxisCommand = new DelegateCommand<object?>(value => GizmoAxisIndex = ParseIndex(value));
         SetSelectionModeCommand = new DelegateCommand<object?>(value => SetSelectionMode(ParseIndex(value)));
+        SetViewportViewCommand = new DelegateCommand<object?>(value => ViewportViewIndex = ParseIndex(value));
+        SetViewportShadingCommand = new DelegateCommand<object?>(value => ViewportShadingIndex = ParseIndex(value));
+        SetPickAccelCommand = new DelegateCommand<object?>(value => PickAccelIndex = ParseIndex(value));
+        SetToneMappingCommand = new DelegateCommand<object?>(value => ToneMappingIndex = ParseIndex(value));
         ToggleSelectionCrossingCommand = new DelegateCommand(() => SelectionCrossing = !SelectionCrossing);
         ToggleGridCommand = new DelegateCommand(() => GridEnabled = !GridEnabled);
         ToggleWireframeCommand = new DelegateCommand(() => WireframeEnabled = !WireframeEnabled);
@@ -88,7 +124,17 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
 
     public DelegateCommand<object?> SetGizmoModeCommand { get; }
 
+    public DelegateCommand<object?> SetGizmoAxisCommand { get; }
+
     public DelegateCommand<object?> SetSelectionModeCommand { get; }
+
+    public DelegateCommand<object?> SetViewportViewCommand { get; }
+
+    public DelegateCommand<object?> SetViewportShadingCommand { get; }
+
+    public DelegateCommand<object?> SetPickAccelCommand { get; }
+
+    public DelegateCommand<object?> SetToneMappingCommand { get; }
 
     public DelegateCommand ToggleSelectionCrossingCommand { get; }
 
@@ -215,6 +261,54 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
         }
     }
 
+    public bool ImageBasedLightingEnabled
+    {
+        get => _imageBasedLightingEnabled;
+        set
+        {
+            if (_imageBasedLightingEnabled == value)
+            {
+                return;
+            }
+
+            _imageBasedLightingEnabled = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool BackfaceCullingEnabled
+    {
+        get => _backfaceCullingEnabled;
+        set
+        {
+            if (_backfaceCullingEnabled == value)
+            {
+                return;
+            }
+
+            _backfaceCullingEnabled = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public double EnvironmentIntensity
+    {
+        get => _environmentIntensity;
+        set
+        {
+            if (Math.Abs(_environmentIntensity - value) < 1e-6)
+            {
+                return;
+            }
+
+            _environmentIntensity = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(EnvironmentIntensityLabel));
+        }
+    }
+
+    public string EnvironmentIntensityLabel => $"Environment intensity: {EnvironmentIntensity:0.00}";
+
     public bool WireframeEnabled
     {
         get => _wireframeEnabled;
@@ -265,6 +359,354 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
             RaisePropertyChanged();
         }
     }
+
+    public int ShadowMapSize
+    {
+        get => _shadowMapSize;
+        set
+        {
+            if (_shadowMapSize == value)
+            {
+                return;
+            }
+
+            _shadowMapSize = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(ShadowMapSizeLabel));
+        }
+    }
+
+    public string ShadowMapSizeLabel => $"Shadow map: {ShadowMapSize}";
+
+    public double ShadowBias
+    {
+        get => _shadowBias;
+        set
+        {
+            if (Math.Abs(_shadowBias - value) < 1e-6)
+            {
+                return;
+            }
+
+            _shadowBias = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(ShadowBiasLabel));
+        }
+    }
+
+    public string ShadowBiasLabel => $"Shadow bias: {ShadowBias:0.0000}";
+
+    public double ShadowNormalBias
+    {
+        get => _shadowNormalBias;
+        set
+        {
+            if (Math.Abs(_shadowNormalBias - value) < 1e-6)
+            {
+                return;
+            }
+
+            _shadowNormalBias = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(ShadowNormalBiasLabel));
+        }
+    }
+
+    public string ShadowNormalBiasLabel => $"Normal bias: {ShadowNormalBias:0.0000}";
+
+    public double ShadowStrength
+    {
+        get => _shadowStrength;
+        set
+        {
+            if (Math.Abs(_shadowStrength - value) < 1e-6)
+            {
+                return;
+            }
+
+            _shadowStrength = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(ShadowStrengthLabel));
+        }
+    }
+
+    public string ShadowStrengthLabel => $"Shadow strength: {ShadowStrength:0.00}";
+
+    public int ShadowPcfRadius
+    {
+        get => _shadowPcfRadius;
+        set
+        {
+            if (_shadowPcfRadius == value)
+            {
+                return;
+            }
+
+            _shadowPcfRadius = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(ShadowPcfRadiusLabel));
+        }
+    }
+
+    public string ShadowPcfRadiusLabel => $"PCF radius: {ShadowPcfRadius}";
+
+    public double SsaoRadius
+    {
+        get => _ssaoRadius;
+        set
+        {
+            if (Math.Abs(_ssaoRadius - value) < 1e-6)
+            {
+                return;
+            }
+
+            _ssaoRadius = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(SsaoRadiusLabel));
+        }
+    }
+
+    public string SsaoRadiusLabel => $"SSAO radius: {SsaoRadius:0.0}";
+
+    public double SsaoIntensity
+    {
+        get => _ssaoIntensity;
+        set
+        {
+            if (Math.Abs(_ssaoIntensity - value) < 1e-6)
+            {
+                return;
+            }
+
+            _ssaoIntensity = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(SsaoIntensityLabel));
+        }
+    }
+
+    public string SsaoIntensityLabel => $"SSAO intensity: {SsaoIntensity:0.00}";
+
+    public double SsaoDepthBias
+    {
+        get => _ssaoDepthBias;
+        set
+        {
+            if (Math.Abs(_ssaoDepthBias - value) < 1e-6)
+            {
+                return;
+            }
+
+            _ssaoDepthBias = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(SsaoDepthBiasLabel));
+        }
+    }
+
+    public string SsaoDepthBiasLabel => $"SSAO bias: {SsaoDepthBias:0.0000}";
+
+    public int SsaoSampleCount
+    {
+        get => _ssaoSampleCount;
+        set
+        {
+            if (_ssaoSampleCount == value)
+            {
+                return;
+            }
+
+            _ssaoSampleCount = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(SsaoSampleCountLabel));
+        }
+    }
+
+    public string SsaoSampleCountLabel => $"SSAO samples: {SsaoSampleCount}";
+
+    public bool PostProcessingEnabled
+    {
+        get => _postProcessingEnabled;
+        set
+        {
+            if (_postProcessingEnabled == value)
+            {
+                return;
+            }
+
+            _postProcessingEnabled = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public int ToneMappingIndex
+    {
+        get => _toneMappingIndex;
+        set
+        {
+            if (_toneMappingIndex == value)
+            {
+                return;
+            }
+
+            _toneMappingIndex = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public double PostExposure
+    {
+        get => _postExposure;
+        set
+        {
+            if (Math.Abs(_postExposure - value) < 1e-6)
+            {
+                return;
+            }
+
+            _postExposure = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(PostExposureLabel));
+        }
+    }
+
+    public string PostExposureLabel => $"Exposure: {PostExposure:0.00}";
+
+    public bool BloomEnabled
+    {
+        get => _bloomEnabled;
+        set
+        {
+            if (_bloomEnabled == value)
+            {
+                return;
+            }
+
+            _bloomEnabled = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public double BloomThreshold
+    {
+        get => _bloomThreshold;
+        set
+        {
+            if (Math.Abs(_bloomThreshold - value) < 1e-6)
+            {
+                return;
+            }
+
+            _bloomThreshold = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(BloomThresholdLabel));
+        }
+    }
+
+    public string BloomThresholdLabel => $"Bloom threshold: {BloomThreshold:0.00}";
+
+    public double BloomIntensity
+    {
+        get => _bloomIntensity;
+        set
+        {
+            if (Math.Abs(_bloomIntensity - value) < 1e-6)
+            {
+                return;
+            }
+
+            _bloomIntensity = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(BloomIntensityLabel));
+        }
+    }
+
+    public string BloomIntensityLabel => $"Bloom intensity: {BloomIntensity:0.00}";
+
+    public int BloomRadius
+    {
+        get => _bloomRadius;
+        set
+        {
+            if (_bloomRadius == value)
+            {
+                return;
+            }
+
+            _bloomRadius = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(BloomRadiusLabel));
+        }
+    }
+
+    public string BloomRadiusLabel => $"Bloom radius: {BloomRadius}";
+
+    public bool FxaaEnabled
+    {
+        get => _fxaaEnabled;
+        set
+        {
+            if (_fxaaEnabled == value)
+            {
+                return;
+            }
+
+            _fxaaEnabled = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public double FxaaEdgeThreshold
+    {
+        get => _fxaaEdgeThreshold;
+        set
+        {
+            if (Math.Abs(_fxaaEdgeThreshold - value) < 1e-6)
+            {
+                return;
+            }
+
+            _fxaaEdgeThreshold = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(FxaaEdgeThresholdLabel));
+        }
+    }
+
+    public string FxaaEdgeThresholdLabel => $"FXAA edge: {FxaaEdgeThreshold:0.000}";
+
+    public double FxaaEdgeThresholdMin
+    {
+        get => _fxaaEdgeThresholdMin;
+        set
+        {
+            if (Math.Abs(_fxaaEdgeThresholdMin - value) < 1e-6)
+            {
+                return;
+            }
+
+            _fxaaEdgeThresholdMin = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(FxaaEdgeThresholdMinLabel));
+        }
+    }
+
+    public string FxaaEdgeThresholdMinLabel => $"FXAA edge min: {FxaaEdgeThresholdMin:0.000}";
+
+    public double FxaaSubpixelBlend
+    {
+        get => _fxaaSubpixelBlend;
+        set
+        {
+            if (Math.Abs(_fxaaSubpixelBlend - value) < 1e-6)
+            {
+                return;
+            }
+
+            _fxaaSubpixelBlend = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(FxaaSubpixelBlendLabel));
+        }
+    }
+
+    public string FxaaSubpixelBlendLabel => $"FXAA blend: {FxaaSubpixelBlend:0.00}";
 
     public bool GridEnabled
     {
@@ -1080,6 +1522,150 @@ public sealed class InspectorOptionsViewModel : ViewModelBase
     }
 
     public string ProportionalRadiusLabel => $"Radius: {ProportionalRadius:0.0}";
+
+    public double ExtrudeDistance
+    {
+        get => _extrudeDistance;
+        set
+        {
+            if (Math.Abs(_extrudeDistance - value) < 1e-6)
+            {
+                return;
+            }
+
+            _extrudeDistance = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(ExtrudeDistanceLabel));
+        }
+    }
+
+    public string ExtrudeDistanceLabel => $"Extrude: {ExtrudeDistance:0.00}";
+
+    public double BevelInset
+    {
+        get => _bevelInset;
+        set
+        {
+            if (Math.Abs(_bevelInset - value) < 1e-6)
+            {
+                return;
+            }
+
+            _bevelInset = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(BevelInsetLabel));
+        }
+    }
+
+    public string BevelInsetLabel => $"Bevel inset: {BevelInset:0.00}";
+
+    public double BevelHeight
+    {
+        get => _bevelHeight;
+        set
+        {
+            if (Math.Abs(_bevelHeight - value) < 1e-6)
+            {
+                return;
+            }
+
+            _bevelHeight = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(BevelHeightLabel));
+        }
+    }
+
+    public string BevelHeightLabel => $"Bevel height: {BevelHeight:0.00}";
+
+    public double InsetDistance
+    {
+        get => _insetDistance;
+        set
+        {
+            if (Math.Abs(_insetDistance - value) < 1e-6)
+            {
+                return;
+            }
+
+            _insetDistance = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(InsetDistanceLabel));
+        }
+    }
+
+    public string InsetDistanceLabel => $"Inset: {InsetDistance:0.00}";
+
+    public double WeldTolerance
+    {
+        get => _weldTolerance;
+        set
+        {
+            if (Math.Abs(_weldTolerance - value) < 1e-6)
+            {
+                return;
+            }
+
+            _weldTolerance = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(WeldToleranceLabel));
+        }
+    }
+
+    public string WeldToleranceLabel => $"Weld tolerance: {WeldTolerance:0.000}";
+
+    public double NudgeStep
+    {
+        get => _nudgeStep;
+        set
+        {
+            if (Math.Abs(_nudgeStep - value) < 1e-6)
+            {
+                return;
+            }
+
+            _nudgeStep = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(NudgeStepLabel));
+        }
+    }
+
+    public string NudgeStepLabel => $"Nudge step: {NudgeStep:0.00}";
+
+    public double RenderScale
+    {
+        get => _renderScale;
+        set
+        {
+            if (Math.Abs(_renderScale - value) < 1e-6)
+            {
+                return;
+            }
+
+            _renderScale = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(RenderScaleLabel));
+        }
+    }
+
+    public string RenderScaleLabel => $"Render scale: {RenderScale:0.00}";
+
+    public int RenderWorkerCount
+    {
+        get => _renderWorkerCount;
+        set
+        {
+            if (_renderWorkerCount == value)
+            {
+                return;
+            }
+
+            _renderWorkerCount = value;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(RenderWorkerCountLabel));
+        }
+    }
+
+    public string RenderWorkerCountLabel => $"Worker threads: {RenderWorkerCount}";
 
     public int MeshPrecision
     {

@@ -24,19 +24,27 @@ public sealed class CommandStateService
         var hasEditable = enabled && selected != null && _editor.Document.EditableMeshes.ContainsKey(selected);
         var canEdgeOp = hasEditable && selection.LastPick.HasValue && ReferenceEquals(selection.LastPick.Value.Instance, selected);
         var hasVertexSelection = hasEditable && mode.VertexSelect && selection.VertexSelection.Count > 1;
+        var hasVertexSelectionAny = hasEditable && mode.VertexSelect && selection.VertexSelection.Count > 0;
         var hasEdgeSelection = hasEditable && mode.EdgeSelect && !selection.EdgeSelection.IsEmpty;
         var hasFaceSelection = hasEditable && mode.FaceSelect && !selection.FaceSelection.IsEmpty;
         var canFace = enabled && mode.FaceSelect && !selection.FaceSelection.IsEmpty;
+        var hasObjectSelection = selection.ObjectSelection.Count > 0;
+        var hasSubSelection = hasEditable && (hasVertexSelectionAny || hasEdgeSelection || hasFaceSelection);
         var canSelectUvIsland = hasEditable
             && enabled
             && selection.LastPick.HasValue
             && ReferenceEquals(selection.LastPick.Value.Instance, selected);
+        var canGrowShrink = hasEditable && (hasVertexSelectionAny || hasEdgeSelection || hasFaceSelection);
         bool hasSeams = false;
         if (hasEditable && selected != null && _editor.Document.TryGetEditableMesh(selected, out var editable))
         {
             hasSeams = editable.SeamEdges.Count > 0;
         }
 
+        _viewModel.CanDuplicateSelection = hasObjectSelection;
+        _viewModel.CanDetachFaces = hasFaceSelection;
+        _viewModel.CanConvertSelection = hasSubSelection;
+        _viewModel.CanNumericTransform = hasObjectSelection || hasSubSelection;
         _viewModel.CanExtrudeFaces = canFace;
         _viewModel.CanBevelFaces = canFace;
         _viewModel.CanInsetFaces = canFace;
@@ -48,6 +56,10 @@ public sealed class CommandStateService
         _viewModel.CanDissolveFaces = hasFaceSelection;
         _viewModel.CanDissolveEdge = canEdgeOp;
         _viewModel.CanCollapseEdge = canEdgeOp;
+        _viewModel.CanSelectEdgeLoop = canEdgeOp;
+        _viewModel.CanSelectEdgeRing = canEdgeOp;
+        _viewModel.CanGrowSelection = canGrowShrink;
+        _viewModel.CanShrinkSelection = canGrowShrink;
         _viewModel.CanCleanupMesh = enabled;
         _viewModel.CanSmoothMesh = enabled;
         _viewModel.CanSimplifyMesh = enabled;

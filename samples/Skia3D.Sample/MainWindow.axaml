@@ -4,6 +4,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Skia3D.Sample"
         xmlns:controls="clr-namespace:Skia3D.Sample.Controls"
+        xmlns:dock="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
+        xmlns:converters="clr-namespace:Skia3D.Sample.Converters"
+        xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Xaml.Behaviors.Interactivity"
+        xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Xaml.Behaviors.Interactions"
         xmlns:primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls"
         xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
         mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="700"
@@ -208,6 +212,12 @@
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="Padding" Value="6,2"/>
             <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style Selector="DataGridCell.PaletteCategoryCell">
+            <Setter Property="Foreground" Value="#A3AFBD"/>
+        </Style>
+        <Style Selector="DataGridCell.PaletteShortcutCell">
+            <Setter Property="Foreground" Value="#C4CCD6"/>
         </Style>
         <Style Selector="ComboBox.MaxPanelCombo">
             <Setter Property="Background" Value="#2F353B"/>
@@ -816,7 +826,12 @@
             <Setter Property="Foreground" Value="#E4E8EE"/>
         </Style>
         <Style Selector="Border.GraphCanvas">
-            <Setter Property="Background" Value="#24292F"/>
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                    <GradientStop Color="#24292F" Offset="0"/>
+                    <GradientStop Color="#1F242A" Offset="1"/>
+                </LinearGradientBrush>
+            </Setter>
             <Setter Property="BorderBrush" Value="#1F2328"/>
             <Setter Property="BorderThickness" Value="1"/>
             <Setter Property="CornerRadius" Value="2"/>
@@ -921,6 +936,16 @@
             <Setter Property="Stroke" Value="#E8EEF5"/>
         </Style>
     </Window.Styles>
+    <Window.Resources>
+        <converters:KeyEventToShortcutInputConverter x:Key="ShortcutInputConverter"/>
+    </Window.Resources>
+    <i:Interaction.Behaviors>
+        <ia:EventTriggerBehavior EventName="KeyDown">
+            <ia:InvokeCommandAction Command="{Binding HandleShortcutInputCommand}"
+                                    PassEventArgsToCommand="True"
+                                    InputConverter="{StaticResource ShortcutInputConverter}"/>
+        </ia:EventTriggerBehavior>
+    </i:Interaction.Behaviors>
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
         <Border Grid.Row="0"
                 Background="#2C3137"
@@ -938,25 +963,467 @@
                     <MenuItem Header="Clear Scene" Command="{Binding Actions.ClearSceneCommand}"/>
                 </MenuItem>
                 <MenuItem Header="_Edit">
-                    <MenuItem Header="Undo" Command="{Binding Actions.UndoCommand}"/>
-                    <MenuItem Header="Redo" Command="{Binding Actions.RedoCommand}"/>
+                    <MenuItem Header="Undo" Command="{Binding Actions.UndoCommand}" IsEnabled="{Binding Editor.CanUndo}"/>
+                    <MenuItem Header="Redo" Command="{Binding Actions.RedoCommand}" IsEnabled="{Binding Editor.CanRedo}"/>
+                    <Separator/>
+                    <MenuItem Header="Select All" Command="{Binding Actions.SelectAllCommand}"/>
+                    <MenuItem Header="Invert Selection" Command="{Binding Actions.InvertSelectionCommand}"/>
+                    <MenuItem Header="Clear Selection" Command="{Binding Actions.ClearSelectionCommand}"/>
+                    <MenuItem Header="Selection Ops">
+                        <MenuItem Header="Grow Selection"
+                                  Command="{Binding Actions.GrowSelectionCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanGrowSelection}"/>
+                        <MenuItem Header="Shrink Selection"
+                                  Command="{Binding Actions.ShrinkSelectionCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanShrinkSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Edge Loop"
+                                  Command="{Binding Actions.SelectEdgeLoopCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanSelectEdgeLoop}"/>
+                        <MenuItem Header="Edge Ring"
+                                  Command="{Binding Actions.SelectEdgeRingCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanSelectEdgeRing}"/>
+                        <Separator/>
+                        <MenuItem Header="Convert Selection">
+                            <MenuItem Header="To Vertices"
+                                      Command="{Binding Actions.ConvertSelectionToVerticesCommand}"
+                                      IsEnabled="{Binding CommandPanel.Commands.CanConvertSelection}"/>
+                            <MenuItem Header="To Edges"
+                                      Command="{Binding Actions.ConvertSelectionToEdgesCommand}"
+                                      IsEnabled="{Binding CommandPanel.Commands.CanConvertSelection}"/>
+                            <MenuItem Header="To Faces"
+                                      Command="{Binding Actions.ConvertSelectionToFacesCommand}"
+                                      IsEnabled="{Binding CommandPanel.Commands.CanConvertSelection}"/>
+                        </MenuItem>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Duplicate"
+                              Command="{Binding Actions.DuplicateSelectionCommand}"
+                              IsEnabled="{Binding CommandPanel.Commands.CanDuplicateSelection}"/>
+                    <Separator/>
+                    <MenuItem Header="Isolate Selection"
+                              Command="{Binding Actions.IsolateSelectionCommand}"
+                              IsEnabled="{Binding CommandPanel.Hierarchy.CanIsolate}"/>
+                    <MenuItem Header="Unhide All"
+                              Command="{Binding Actions.UnhideAllCommand}"
+                              IsEnabled="{Binding CommandPanel.Hierarchy.CanUnhide}"/>
+                    <Separator/>
+                    <MenuItem Header="Rename"
+                              Command="{Binding Actions.RenameSelectionCommand}"
+                              IsEnabled="{Binding CommandPanel.Hierarchy.CanRename}"/>
+                    <MenuItem Header="Delete"
+                              Command="{Binding Actions.DeleteSelectionCommand}"
+                              IsEnabled="{Binding CommandPanel.Hierarchy.CanDelete}"/>
                 </MenuItem>
-                <MenuItem Header="_Tools" IsEnabled="False"/>
-                <MenuItem Header="_Group" IsEnabled="False"/>
-                <MenuItem Header="_Views" IsEnabled="False"/>
-                <MenuItem Header="_Create" IsEnabled="False"/>
-                <MenuItem Header="_Modifiers" IsEnabled="False"/>
-                <MenuItem Header="_Animation" IsEnabled="False"/>
-                <MenuItem Header="_Graph Editors" IsEnabled="False"/>
-                <MenuItem Header="_Rendering" IsEnabled="False"/>
-                <MenuItem Header="_Civil View" IsEnabled="False"/>
-                <MenuItem Header="_Customize" IsEnabled="False"/>
-                <MenuItem Header="_Scripting" IsEnabled="False"/>
-                <MenuItem Header="_Content" IsEnabled="False"/>
+                <MenuItem Header="_Tools">
+                    <MenuItem Header="Selection Tools">
+                        <MenuItem Header="Click"
+                                  Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                  CommandParameter="0"/>
+                        <MenuItem Header="Box"
+                                  Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                  CommandParameter="1"/>
+                        <MenuItem Header="Paint"
+                                  Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                  CommandParameter="2"/>
+                        <MenuItem Header="Lasso"
+                                  Command="{Binding Toolbar.Options.SetSelectionToolCommand}"
+                                  CommandParameter="3"/>
+                        <Separator/>
+                        <MenuItem Header="Crossing"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.SelectionCrossing, Mode=TwoWay}"/>
+                    </MenuItem>
+                    <MenuItem Header="Selection Modes">
+                        <MenuItem Header="Edit Mode"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.EditMode, Mode=TwoWay}"/>
+                        <MenuItem Header="Vertex"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.VertexMode, Mode=TwoWay}"
+                                  IsEnabled="{Binding Toolbar.Options.EditMode}"/>
+                        <MenuItem Header="Edge"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.EdgeMode, Mode=TwoWay}"
+                                  IsEnabled="{Binding Toolbar.Options.EditMode}"/>
+                        <MenuItem Header="Face"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.FaceMode, Mode=TwoWay}"
+                                  IsEnabled="{Binding Toolbar.Options.EditMode}"/>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Transform">
+                        <MenuItem Header="Move"
+                                  Command="{Binding Toolbar.Options.SetGizmoModeCommand}"
+                                  CommandParameter="0"/>
+                        <MenuItem Header="Rotate"
+                                  Command="{Binding Toolbar.Options.SetGizmoModeCommand}"
+                                  CommandParameter="1"/>
+                        <MenuItem Header="Scale"
+                                  Command="{Binding Toolbar.Options.SetGizmoModeCommand}"
+                                  CommandParameter="2"/>
+                        <MenuItem Header="Axis Constraint">
+                            <MenuItem Header="Free"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="0"/>
+                            <MenuItem Header="X"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="1"/>
+                            <MenuItem Header="Y"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="2"/>
+                            <MenuItem Header="Z"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="3"/>
+                            <MenuItem Header="XY"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="4"/>
+                            <MenuItem Header="XZ"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="5"/>
+                            <MenuItem Header="YZ"
+                                      Command="{Binding Toolbar.Options.SetGizmoAxisCommand}"
+                                      CommandParameter="6"/>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Show Gizmo"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.GizmoVisible, Mode=TwoWay}"/>
+                        <MenuItem Header="Enable Snaps"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.GizmoSnapEnabled, Mode=TwoWay}"/>
+                        <Separator/>
+                        <MenuItem Header="Transform Values..."
+                                  Command="{Binding Actions.TransformSelectionCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanNumericTransform}"/>
+                        <Separator/>
+                        <MenuItem Header="Nudge +X" Command="{Binding Actions.NudgePosXCommand}"/>
+                        <MenuItem Header="Nudge -X" Command="{Binding Actions.NudgeNegXCommand}"/>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="_Group">
+                    <MenuItem Header="Group Selection" Command="{Binding Actions.GroupSelectionCommand}"/>
+                    <MenuItem Header="Ungroup" Command="{Binding Actions.UngroupSelectionCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Views">
+                    <MenuItem Header="Viewport">
+                        <MenuItem Header="Perspective"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="0"/>
+                        <MenuItem Header="Top"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="1"/>
+                        <MenuItem Header="Front"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="2"/>
+                        <MenuItem Header="Left"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="3"/>
+                        <MenuItem Header="Right"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="4"/>
+                        <MenuItem Header="Back"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="5"/>
+                        <MenuItem Header="Bottom"
+                                  Command="{Binding Toolbar.Options.SetViewportViewCommand}"
+                                  CommandParameter="6"/>
+                    </MenuItem>
+                    <MenuItem Header="Shading">
+                        <MenuItem Header="Default Shading"
+                                  Command="{Binding Toolbar.Options.SetViewportShadingCommand}"
+                                  CommandParameter="0"/>
+                        <MenuItem Header="Wireframe"
+                                  Command="{Binding Toolbar.Options.SetViewportShadingCommand}"
+                                  CommandParameter="1"/>
+                        <MenuItem Header="Unlit"
+                                  Command="{Binding Toolbar.Options.SetViewportShadingCommand}"
+                                  CommandParameter="2"/>
+                    </MenuItem>
+                    <MenuItem Header="Navigation">
+                        <MenuItem Header="Default"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.IsNavDefault, Mode=TwoWay}"/>
+                        <MenuItem Header="Pan"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.IsNavPan, Mode=TwoWay}"/>
+                        <MenuItem Header="Orbit"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.IsNavOrbit, Mode=TwoWay}"/>
+                        <MenuItem Header="Zoom"
+                                  ToggleType="CheckBox"
+                                  IsChecked="{Binding Toolbar.Options.IsNavZoom, Mode=TwoWay}"/>
+                    </MenuItem>
+                    <Separator/>
+                    <MenuItem Header="Zoom Extents" Command="{Binding Actions.ZoomExtentsCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Create">
+                    <MenuItem Header="Primitives">
+                        <MenuItem Header="Box" Command="{Binding Actions.CreateCubeCommand}"/>
+                        <MenuItem Header="Sphere" Command="{Binding Actions.CreateSphereCommand}"/>
+                        <MenuItem Header="Cylinder" Command="{Binding Actions.CreateCylinderCommand}"/>
+                        <MenuItem Header="Pyramid" Command="{Binding Actions.CreatePyramidCommand}"/>
+                        <MenuItem Header="Plane" Command="{Binding Actions.CreatePlaneCommand}"/>
+                        <MenuItem Header="Grid" Command="{Binding Actions.CreateGridCommand}"/>
+                    </MenuItem>
+                    <MenuItem Header="Lights">
+                        <MenuItem Header="Directional Light" Command="{Binding Actions.CreateDirectionalLightCommand}"/>
+                        <MenuItem Header="Point Light" Command="{Binding Actions.CreatePointLightCommand}"/>
+                        <MenuItem Header="Spot Light" Command="{Binding Actions.CreateSpotLightCommand}"/>
+                    </MenuItem>
+                    <MenuItem Header="Cameras">
+                        <MenuItem Header="Camera" Command="{Binding Actions.CreateCameraCommand}"/>
+                    </MenuItem>
+                    <MenuItem Header="Navigation">
+                        <MenuItem Header="Nav Grid" Command="{Binding Actions.CreateNavGridCommand}"/>
+                        <MenuItem Header="Flow Agent" Command="{Binding Actions.CreateFlowCommand}"/>
+                        <MenuItem Header="Idle Area" Command="{Binding Actions.CreateIdleAreaCommand}"/>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="_Modifiers">
+                    <MenuItem Header="Face Tools">
+                        <MenuItem Header="Extrude Faces"
+                                  Command="{Binding Actions.ExtrudeFacesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanExtrudeFaces}"/>
+                        <MenuItem Header="Bevel Faces"
+                                  Command="{Binding Actions.BevelFacesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanBevelFaces}"/>
+                        <MenuItem Header="Inset Faces"
+                                  Command="{Binding Actions.InsetFacesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanInsetFaces}"/>
+                        <MenuItem Header="Detach Faces"
+                                  Command="{Binding Actions.DetachFacesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanDetachFaces}"/>
+                        <MenuItem Header="Loop Cut"
+                                  Command="{Binding Actions.LoopCutEdgeLoopCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanLoopCutEdgeLoop}"/>
+                    </MenuItem>
+                    <MenuItem Header="Edge Tools">
+                        <MenuItem Header="Split Edge"
+                                  Command="{Binding Actions.SplitEdgeCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanSplitEdge}"/>
+                        <MenuItem Header="Bridge Edges"
+                                  Command="{Binding Actions.BridgeEdgesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanBridgeEdges}"/>
+                        <MenuItem Header="Bridge Edge Loops"
+                                  Command="{Binding Actions.BridgeEdgeLoopsCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanBridgeEdgeLoops}"/>
+                        <MenuItem Header="Dissolve Edge"
+                                  Command="{Binding Actions.DissolveEdgeCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanDissolveEdge}"/>
+                        <MenuItem Header="Collapse Edge"
+                                  Command="{Binding Actions.CollapseEdgeCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanCollapseEdge}"/>
+                    </MenuItem>
+                    <MenuItem Header="Vertex Tools">
+                        <MenuItem Header="Merge Vertices"
+                                  Command="{Binding Actions.MergeVerticesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanMergeVertices}"/>
+                        <MenuItem Header="Weld Vertices" Command="{Binding Actions.WeldVerticesCommand}"/>
+                    </MenuItem>
+                    <MenuItem Header="Cleanup">
+                        <MenuItem Header="Dissolve Faces"
+                                  Command="{Binding Actions.DissolveFacesCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanDissolveFaces}"/>
+                        <MenuItem Header="Cleanup Mesh"
+                                  Command="{Binding Actions.CleanupMeshCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanCleanupMesh}"/>
+                        <MenuItem Header="Smooth Mesh"
+                                  Command="{Binding Actions.SmoothMeshCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanSmoothMesh}"/>
+                        <MenuItem Header="Simplify Mesh"
+                                  Command="{Binding Actions.SimplifyMeshCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanSimplifyMesh}"/>
+                    </MenuItem>
+                    <MenuItem Header="UV Tools">
+                        <MenuItem Header="Planar UV"
+                                  Command="{Binding Actions.PlanarUvCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanPlanarUv}"/>
+                        <MenuItem Header="Box UV"
+                                  Command="{Binding Actions.BoxUvCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanBoxUv}"/>
+                        <MenuItem Header="Unwrap UV"
+                                  Command="{Binding Actions.UnwrapUvCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanUnwrapUv}"/>
+                        <MenuItem Header="Pack UV"
+                                  Command="{Binding Actions.PackUvCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanPackUv}"/>
+                        <Separator/>
+                        <MenuItem Header="Normalize UV"
+                                  Command="{Binding Actions.NormalizeUvCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanNormalizeUv}"/>
+                        <MenuItem Header="Flip U"
+                                  Command="{Binding Actions.FlipUCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanFlipU}"/>
+                        <MenuItem Header="Flip V"
+                                  Command="{Binding Actions.FlipVCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanFlipV}"/>
+                        <Separator/>
+                        <MenuItem Header="Mark Seam"
+                                  Command="{Binding Actions.MarkUvSeamsCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanMarkUvSeams}"/>
+                        <MenuItem Header="Clear Seam"
+                                  Command="{Binding Actions.ClearUvSeamsCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanClearUvSeams}"/>
+                        <MenuItem Header="Clear All Seams"
+                                  Command="{Binding Actions.ClearAllUvSeamsCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanClearAllUvSeams}"/>
+                        <MenuItem Header="Select Island"
+                                  Command="{Binding Actions.SelectUvIslandCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanSelectUvIsland}"/>
+                        <Separator/>
+                        <MenuItem Header="Assign UV Group"
+                                  Command="{Binding Actions.AssignUvGroupCommand}"
+                                  CommandParameter="{Binding Toolbar.Options.UvGroupId}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanAssignUvGroup}"/>
+                        <MenuItem Header="Clear UV Group"
+                                  Command="{Binding Actions.ClearUvGroupCommand}"
+                                  IsEnabled="{Binding CommandPanel.Commands.CanClearUvGroup}"/>
+                    </MenuItem>
+                    <MenuItem Header="Transform">
+                        <MenuItem Header="Center Pivot"
+                                  Command="{Binding Actions.CenterPivotCommand}"
+                                  IsEnabled="{Binding CommandPanel.Hierarchy.CanCenterPivot}"/>
+                        <MenuItem Header="Reset Transform"
+                                  Command="{Binding Actions.ResetTransformCommand}"
+                                  IsEnabled="{Binding CommandPanel.Hierarchy.CanResetTransform}"/>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="_Animation">
+                    <MenuItem Header="{Binding CommandPanel.Motion.PlayLabel}"
+                              ToggleType="CheckBox"
+                              IsChecked="{Binding CommandPanel.Motion.IsPlaying, Mode=TwoWay}"
+                              IsEnabled="{Binding CommandPanel.Motion.CanPlay}"/>
+                    <MenuItem Header="Loop"
+                              ToggleType="CheckBox"
+                              IsChecked="{Binding CommandPanel.Motion.Loop, Mode=TwoWay}"
+                              IsEnabled="{Binding CommandPanel.Motion.CanLoop}"/>
+                    <MenuItem Header="Reset"
+                              Command="{Binding Actions.AnimationResetCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.CanReset}"/>
+                    <MenuItem Header="Auto Key"
+                              ToggleType="CheckBox"
+                              IsChecked="{Binding CommandPanel.Motion.AutoKeyEnabled, Mode=TwoWay}"
+                              IsEnabled="{Binding CommandPanel.Motion.CanSetKey}"/>
+                    <MenuItem Header="Set Key"
+                              Command="{Binding CommandPanel.Motion.SetKeyCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.CanSetKey}"/>
+                    <MenuItem Header="Clear Keys" Command="{Binding Actions.ClearAnimationKeysCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="New Clip" Command="{Binding CommandPanel.Motion.Editor.CreateClipCommand}"/>
+                    <MenuItem Header="Duplicate Clip"
+                              Command="{Binding CommandPanel.Motion.Editor.DuplicateClipCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditClip}"/>
+                    <MenuItem Header="Delete Clip"
+                              Command="{Binding CommandPanel.Motion.Editor.DeleteClipCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditClip}"/>
+                    <Separator/>
+                    <MenuItem Header="Add Track"
+                              Command="{Binding CommandPanel.Motion.Editor.AddTrackCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditClip}"/>
+                    <MenuItem Header="Remove Track"
+                              Command="{Binding CommandPanel.Motion.Editor.RemoveTrackCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditTrack}"/>
+                    <Separator/>
+                    <MenuItem Header="Delete Key"
+                              Command="{Binding CommandPanel.Motion.Editor.DeleteKeyCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditKey}"/>
+                    <MenuItem Header="Prev Key"
+                              Command="{Binding CommandPanel.Motion.Editor.PrevKeyCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.HasSelectedTrack}"/>
+                    <MenuItem Header="Next Key"
+                              Command="{Binding CommandPanel.Motion.Editor.NextKeyCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.HasSelectedTrack}"/>
+                    <MenuItem Header="Jump To Key"
+                              Command="{Binding CommandPanel.Motion.Editor.JumpToKeyCommand}"
+                              IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditKey}"/>
+                </MenuItem>
+                <MenuItem Header="_Graph Editors">
+                    <MenuItem Header="Material Graph..." Command="{Binding Actions.OpenMaterialGraphCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Rendering">
+                    <MenuItem Header="Depth Buffer" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.DepthEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Lighting" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.LightingEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Image Based Lighting" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.ImageBasedLightingEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Backface Culling" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.BackfaceCullingEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Wireframe" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.WireframeEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Shadows" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.ShadowEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="SSAO" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.SsaoEnabled, Mode=TwoWay}"/>
+                    <Separator/>
+                    <MenuItem Header="Post FX" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.PostProcessingEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Bloom" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.BloomEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="FXAA" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.FxaaEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Tone Mapping">
+                        <MenuItem Header="None"
+                                  Command="{Binding Toolbar.Options.SetToneMappingCommand}"
+                                  CommandParameter="0"/>
+                        <MenuItem Header="Reinhard"
+                                  Command="{Binding Toolbar.Options.SetToneMappingCommand}"
+                                  CommandParameter="1"/>
+                        <MenuItem Header="ACES"
+                                  Command="{Binding Toolbar.Options.SetToneMappingCommand}"
+                                  CommandParameter="2"/>
+                    </MenuItem>
+                    <MenuItem Header="Grid" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.GridEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Pause" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.PauseEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Pick Debug" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.PickDebugEnabled, Mode=TwoWay}"/>
+                    <MenuItem Header="Show Stats" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.ShowStats, Mode=TwoWay}"/>
+                    <MenuItem Header="Show UV Seams" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.UvShowSeams, Mode=TwoWay}"/>
+                    <MenuItem Header="Show UV Islands" ToggleType="CheckBox" IsChecked="{Binding Toolbar.Options.UvShowIslands, Mode=TwoWay}"/>
+                    <Separator/>
+                    <MenuItem Header="Pick Acceleration">
+                        <MenuItem Header="Auto"
+                                  Command="{Binding Toolbar.Options.SetPickAccelCommand}"
+                                  CommandParameter="0"/>
+                        <MenuItem Header="BVH"
+                                  Command="{Binding Toolbar.Options.SetPickAccelCommand}"
+                                  CommandParameter="1"/>
+                        <MenuItem Header="Uniform Grid"
+                                  Command="{Binding Toolbar.Options.SetPickAccelCommand}"
+                                  CommandParameter="2"/>
+                    </MenuItem>
+                </MenuItem>
+                <MenuItem Header="_Civil View">
+                    <MenuItem Header="Nav Grid" Command="{Binding Actions.CreateNavGridCommand}"/>
+                    <MenuItem Header="Flow Agent" Command="{Binding Actions.CreateFlowCommand}"/>
+                    <MenuItem Header="Idle Area" Command="{Binding Actions.CreateIdleAreaCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Clear Civil View" Command="{Binding Actions.ClearNavigationCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Customize">
+                    <MenuItem Header="Workspace Manager"
+                              ToggleType="CheckBox"
+                              IsChecked="{Binding Workspace.IsManagerOpen, Mode=TwoWay}"/>
+                    <MenuItem Header="Reset Layout" Command="{Binding Workspace.ResetLayoutCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="Ribbon" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowRibbon, Mode=TwoWay}"/>
+                    <MenuItem Header="Scene Explorer" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowSceneExplorer, Mode=TwoWay}"/>
+                    <MenuItem Header="Command Panel" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowCommandPanel, Mode=TwoWay}"/>
+                    <MenuItem Header="Viewport Toolbar" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowViewportToolbar, Mode=TwoWay}"/>
+                    <MenuItem Header="Timeline" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowTimeline, Mode=TwoWay}"/>
+                    <MenuItem Header="Status Bar" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowStatusBar, Mode=TwoWay}"/>
+                    <Separator/>
+                    <MenuItem Header="Command Palette"
+                              ToggleType="CheckBox"
+                              IsChecked="{Binding CommandPalette.IsOpen, Mode=TwoWay}"/>
+                    <MenuItem Header="Shortcut Editor"
+                              ToggleType="CheckBox"
+                              IsChecked="{Binding Shortcuts.IsOpen, Mode=TwoWay}"/>
+                    <MenuItem Header="Shortcut Reference"
+                              Command="{Binding Actions.ToggleShortcutsCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Scripting">
+                    <MenuItem Header="Script Console..." Command="{Binding Actions.OpenScriptConsoleCommand}"/>
+                </MenuItem>
+                <MenuItem Header="_Content">
+                    <MenuItem Header="Assign Texture..." Command="{Binding Actions.AssignTextureCommand}"/>
+                    <MenuItem Header="Assign Checker Texture" Command="{Binding Actions.AssignCheckerTextureCommand}"/>
+                    <MenuItem Header="Clear Textures" Command="{Binding Actions.ClearTexturesCommand}"/>
+                </MenuItem>
                 <MenuItem Header="_Help">
                     <MenuItem Header="Shortcut Reference"
                               Command="{Binding Actions.ToggleShortcutsCommand}"/>
-                    <MenuItem Header="About" IsEnabled="False"/>
+                    <MenuItem Header="About" Command="{Binding Actions.ShowAboutCommand}"/>
                 </MenuItem>
             </Menu>
         </Border>
@@ -1064,6 +1531,119 @@
                 </Grid>
             </Border>
         </primitives:Popup>
+        <primitives:Popup IsOpen="{Binding CommandPalette.IsOpen, Mode=TwoWay}"
+                          Placement="Center"
+                          HorizontalOffset="0"
+                          VerticalOffset="0">
+            <Border Classes="MaxPopupPanel"
+                    Width="540"
+                    MinHeight="360">
+                <Grid RowDefinitions="Auto,*">
+                    <Border Classes="MaxPopupHeader">
+                        <DockPanel LastChildFill="True">
+                            <TextBlock Text="Command Palette" Classes="MaxPopupTitle" DockPanel.Dock="Left"/>
+                            <Button Classes="MaxToolbarIcon"
+                                    Command="{Binding CommandPalette.CloseCommand}"
+                                    DockPanel.Dock="Right"
+                                    Width="22"
+                                    Height="22">
+                                <Viewbox Width="12" Height="12">
+                                    <Path Classes="MaxToolbarGlyph" Data="M4,4 L12,12 M12,4 L4,12"/>
+                                </Viewbox>
+                            </Button>
+                        </DockPanel>
+                    </Border>
+                    <StackPanel Grid.Row="1" Spacing="8" Margin="10">
+                        <TextBox Watermark="Type a command..."
+                                 Text="{Binding CommandPalette.SearchText, Mode=TwoWay}"
+                                 Classes="MaxPanelSearch"/>
+                        <DataGrid ItemsSource="{Binding CommandPalette.CommandsView}"
+                                  ColumnDefinitionsSource="{Binding CommandPalette.Columns}"
+                                  SortingModel="{Binding CommandPalette.SortingModel}"
+                                  FilteringModel="{Binding CommandPalette.FilteringModel}"
+                                  SearchModel="{Binding CommandPalette.SearchModel}"
+                                  SelectedItem="{Binding CommandPalette.SelectedCommand, Mode=TwoWay}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserSortColumns="True"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="None"
+                                  MinHeight="220">
+                            <i:Interaction.Behaviors>
+                                <ia:EventTriggerBehavior EventName="DoubleTapped">
+                                    <ia:InvokeCommandAction Command="{Binding CommandPalette.ExecuteSelectedCommand}"/>
+                                </ia:EventTriggerBehavior>
+                            </i:Interaction.Behaviors>
+                        </DataGrid>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6">
+                            <Button Content="Run"
+                                    Classes="InspectorButton"
+                                    Command="{Binding CommandPalette.ExecuteSelectedCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </primitives:Popup>
+        <primitives:Popup IsOpen="{Binding Shortcuts.IsOpen, Mode=TwoWay}"
+                          Placement="Center"
+                          HorizontalOffset="0"
+                          VerticalOffset="0">
+            <Border Classes="MaxPopupPanel"
+                    Width="620"
+                    MinHeight="420">
+                <Grid RowDefinitions="Auto,Auto,*">
+                    <Border Classes="MaxPopupHeader">
+                        <DockPanel LastChildFill="True">
+                            <TextBlock Text="Shortcut Editor" Classes="MaxPopupTitle" DockPanel.Dock="Left"/>
+                            <Button Classes="MaxToolbarIcon"
+                                    Command="{Binding Shortcuts.CloseCommand}"
+                                    DockPanel.Dock="Right"
+                                    Width="22"
+                                    Height="22">
+                                <Viewbox Width="12" Height="12">
+                                    <Path Classes="MaxToolbarGlyph" Data="M4,4 L12,12 M12,4 L4,12"/>
+                                </Viewbox>
+                            </Button>
+                        </DockPanel>
+                    </Border>
+                    <StackPanel Grid.Row="1" Spacing="6" Margin="10">
+                        <TextBox Watermark="Search shortcuts..."
+                                 Text="{Binding Shortcuts.SearchText, Mode=TwoWay}"
+                                 Classes="MaxPanelSearch"/>
+                        <TextBlock Text="{Binding Shortcuts.CaptureStatus}" Foreground="#A3AFBD"/>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Content="Record"
+                                    Classes="InspectorButton"
+                                    Command="{Binding Shortcuts.BeginCaptureCommand}"/>
+                            <Button Content="Clear"
+                                    Classes="InspectorButton"
+                                    Command="{Binding Shortcuts.ClearShortcutCommand}"/>
+                            <Button Content="Reset Defaults"
+                                    Classes="InspectorButton"
+                                    Command="{Binding Shortcuts.ResetDefaultsCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <DataGrid Grid.Row="2"
+                              ItemsSource="{Binding Shortcuts.BindingsView}"
+                              ColumnDefinitionsSource="{Binding Shortcuts.Columns}"
+                              SortingModel="{Binding Shortcuts.SortingModel}"
+                              FilteringModel="{Binding Shortcuts.FilteringModel}"
+                              SearchModel="{Binding Shortcuts.SearchModel}"
+                              SelectedItem="{Binding Shortcuts.SelectedBinding, Mode=TwoWay}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserSortColumns="True"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="None">
+                        <i:Interaction.Behaviors>
+                            <ia:EventTriggerBehavior EventName="DoubleTapped">
+                                <ia:InvokeCommandAction Command="{Binding Shortcuts.BeginCaptureCommand}"/>
+                            </ia:EventTriggerBehavior>
+                        </i:Interaction.Behaviors>
+                    </DataGrid>
+                </Grid>
+            </Border>
+        </primitives:Popup>
         <controls:MainToolbarControl Grid.Row="1"
                                      DataContext="{Binding Toolbar}"/>
         <controls:SecondaryToolbarControl Grid.Row="2"
@@ -1071,164 +1651,12 @@
         <controls:GraphiteRibbonControl Grid.Row="3"
                                          DataContext="{Binding Toolbar}"
                                          IsVisible="{Binding Workspace.ShowRibbon}"/>
-        <Grid Grid.Row="4" ColumnDefinitions="Auto,*,Auto">
-            <Grid Grid.Column="0"
-                  Margin="8,8,6,8"
-                  IsVisible="{Binding Workspace.ShowSceneExplorer}">
-                <controls:SceneExplorerControl DataContext="{Binding CommandPanel}"/>
-            </Grid>
-            <Grid Grid.Column="1" ColumnDefinitions="Auto,*" Margin="0,8,6,8">
-                <controls:ViewportToolbarControl Grid.Column="0"
-                                                 DataContext="{Binding Toolbar}"
-                                                 IsVisible="{Binding Workspace.ShowViewportToolbar}"/>
-                <Border Grid.Column="1"
-                        Background="#1E2227"
-                        BorderBrush="#1F2328"
-                        BorderThickness="1"
-                        CornerRadius="2"
-                        ClipToBounds="True">
-                    <Grid Background="#1F2328"
-                          RowDefinitions="*,*"
-                          ColumnDefinitions="*,*"
-                          RowSpacing="1"
-                          ColumnSpacing="1">
-                        <Border Grid.Row="0" Grid.Column="0" Background="#1E2227">
-                            <Grid>
-                                <controls:EditorViewportControl x:Name="ViewportTop"/>
-                                <Border Classes="MaxViewportLabel"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Margin="6">
-                                    <TextBlock Text="Top" Classes="MaxViewportLabelText"/>
-                                </Border>
-                            </Grid>
-                        </Border>
-                        <Border Grid.Row="0" Grid.Column="1" Background="#1E2227">
-                            <Grid>
-                                <controls:EditorViewportControl x:Name="ViewportFront"/>
-                                <Border Classes="MaxViewportLabel"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Margin="6">
-                                    <TextBlock Text="Front" Classes="MaxViewportLabelText"/>
-                                </Border>
-                            </Grid>
-                        </Border>
-                        <Border Grid.Row="1" Grid.Column="0" Background="#1E2227">
-                            <Grid>
-                                <controls:EditorViewportControl x:Name="ViewportLeft"/>
-                                <Border Classes="MaxViewportLabel"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Top"
-                                        Margin="6">
-                                    <TextBlock Text="Left" Classes="MaxViewportLabelText"/>
-                                </Border>
-                            </Grid>
-                        </Border>
-                        <Border Grid.Row="1" Grid.Column="1" Background="#1E2227">
-                            <Grid>
-                                <controls:EditorViewportControl x:Name="ViewportPerspective"/>
-                                <Grid>
-                                    <Border Classes="MaxViewportLabel"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Top"
-                                            Margin="6">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <ComboBox Classes="MaxViewportCombo"
-                                                      SelectedIndex="{Binding Toolbar.Options.ViewportViewIndex, Mode=TwoWay}">
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Perspective"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Top"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Front"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Left"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Right"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Back"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Bottom"/>
-                                            </ComboBox>
-                                            <ComboBox Classes="MaxViewportCombo"
-                                                      SelectedIndex="{Binding Toolbar.Options.ViewportShadingIndex, Mode=TwoWay}">
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Default Shading"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Wireframe"/>
-                                                <ComboBoxItem Classes="MaxViewportComboItem" Content="Unlit"/>
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Classes="MaxViewCube"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Top"
-                                            Margin="8"
-                                            IsHitTestVisible="False">
-                                        <StackPanel Spacing="2">
-                                            <TextBlock Text="View" Classes="MaxViewCubeText"/>
-                                            <TextBlock Text="Cube" Classes="MaxViewCubeText"/>
-                                        </StackPanel>
-                                    </Border>
-                                    <Border Classes="MaxViewportHud"
-                                            HorizontalAlignment="Left"
-                                            VerticalAlignment="Bottom"
-                                            Margin="8"
-                                            IsHitTestVisible="False">
-                                        <TextBlock Text="{Binding Toolbar.Options.ViewportHudLabel}"
-                                                   Classes="MaxViewportHudText"
-                                                   TextWrapping="NoWrap"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   MaxWidth="360"/>
-                                    </Border>
-                                    <Border Classes="MaxViewportReadout"
-                                            HorizontalAlignment="Right"
-                                            VerticalAlignment="Bottom"
-                                            Margin="8"
-                                            IsHitTestVisible="False">
-                                        <TextBlock Text="{Binding Toolbar.Options.ViewportOverlayStatusLabel}"
-                                                   Classes="MaxViewportReadoutText"
-                                                   TextWrapping="NoWrap"/>
-                                    </Border>
-                                    <StackPanel Orientation="Horizontal"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Bottom"
-                                                Spacing="4"
-                                                Margin="8">
-                                        <ToggleButton Classes="MaxViewportNavButton"
-                                                      ToolTip.Tip="Zoom"
-                                                      IsChecked="{Binding Toolbar.Options.IsNavZoom, Mode=TwoWay}">
-                                            <TextBlock Text="Z" Classes="MaxViewportNavGlyph"/>
-                                        </ToggleButton>
-                                        <ToggleButton Classes="MaxViewportNavButton"
-                                                      ToolTip.Tip="Pan"
-                                                      IsChecked="{Binding Toolbar.Options.IsNavPan, Mode=TwoWay}">
-                                            <TextBlock Text="P" Classes="MaxViewportNavGlyph"/>
-                                        </ToggleButton>
-                                        <ToggleButton Classes="MaxViewportNavButton"
-                                                      ToolTip.Tip="Orbit"
-                                                      IsChecked="{Binding Toolbar.Options.IsNavOrbit, Mode=TwoWay}">
-                                            <TextBlock Text="O" Classes="MaxViewportNavGlyph"/>
-                                        </ToggleButton>
-                                        <ToggleButton Classes="MaxViewportNavButton"
-                                                      ToolTip.Tip="Universal"
-                                                      IsChecked="{Binding Toolbar.Options.IsNavDefault, Mode=TwoWay}">
-                                            <TextBlock Text="U" Classes="MaxViewportNavGlyph"/>
-                                        </ToggleButton>
-                                    </StackPanel>
-                                </Grid>
-                            </Grid>
-                        </Border>
-                    </Grid>
-                </Border>
-                <primitives:Popup IsOpen="{Binding Actions.IsQuadMenuOpen, Mode=TwoWay}"
-                                  x:Name="QuadMenuPopup"
-                                  PlacementTarget="{Binding ElementName=ViewportPerspective}"
-                                  Placement="Pointer"
-                                  HorizontalOffset="8"
-                                  VerticalOffset="8"
-                                  IsLightDismissEnabled="True">
-                    <controls:QuadMenuControl DataContext="{Binding}"/>
-                </primitives:Popup>
-            </Grid>
-            <Grid Grid.Column="2"
-                  IsVisible="{Binding Workspace.ShowCommandPanel}">
-                <controls:CommandPanelControl x:Name="OptionsPanel"
-                                              DataContext="{Binding CommandPanel}"/>
-            </Grid>
-        </Grid>
+        <dock:DockControl Grid.Row="4"
+                          Layout="{Binding DockLayout.Layout}"
+                          Factory="{Binding DockLayout.Factory}"
+                          AutoCreateDataTemplates="True"
+                          InitializeLayout="False">
+        </dock:DockControl>
         <Grid Grid.Row="5"
               IsVisible="{Binding Workspace.ShowStatusBar}">
             <controls:StatusBarControl DataContext="{Binding}"/>

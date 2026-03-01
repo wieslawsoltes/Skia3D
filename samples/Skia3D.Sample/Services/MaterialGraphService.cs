@@ -61,17 +61,38 @@ public sealed class MaterialGraphService : IDisposable
             graph.OutputNode.TrySetInputDefault(MaterialOutputNode.BaseColorTextureInput,
                 ShaderValue.TextureValue(material.BaseColorTexture, material.BaseColorSampler));
         }
+        graph.OutputNode.TrySetInputDefault(MaterialOutputNode.BaseColorTextureStrengthInput,
+            ShaderValue.Float(material.BaseColorTextureStrength));
 
         graph.OutputNode.TrySetInputDefault(MaterialOutputNode.MetallicInput, ShaderValue.Float(material.Metallic));
         graph.OutputNode.TrySetInputDefault(MaterialOutputNode.RoughnessInput, ShaderValue.Float(material.Roughness));
+        if (material.MetallicRoughnessTexture != null)
+        {
+            graph.OutputNode.TrySetInputDefault(MaterialOutputNode.MetallicRoughnessTextureInput,
+                ShaderValue.TextureValue(material.MetallicRoughnessTexture, material.MetallicRoughnessSampler));
+        }
+        graph.OutputNode.TrySetInputDefault(MaterialOutputNode.MetallicRoughnessStrengthInput,
+            ShaderValue.Float(material.MetallicRoughnessTextureStrength));
         if (material.NormalTexture != null)
         {
             graph.OutputNode.TrySetInputDefault(MaterialOutputNode.NormalTextureInput,
                 ShaderValue.TextureValue(material.NormalTexture, material.NormalSampler));
-            graph.OutputNode.TrySetInputDefault(MaterialOutputNode.NormalStrengthInput, ShaderValue.Float(material.NormalStrength));
         }
+        graph.OutputNode.TrySetInputDefault(MaterialOutputNode.NormalStrengthInput, ShaderValue.Float(material.NormalStrength));
 
         graph.OutputNode.TrySetInputDefault(MaterialOutputNode.EmissiveInput, ShaderValue.Color(emissive));
+        if (material.EmissiveTexture != null)
+        {
+            graph.OutputNode.TrySetInputDefault(MaterialOutputNode.EmissiveTextureInput,
+                ShaderValue.TextureValue(material.EmissiveTexture, material.EmissiveSampler));
+        }
+        graph.OutputNode.TrySetInputDefault(MaterialOutputNode.EmissiveStrengthInput, ShaderValue.Float(material.EmissiveStrength));
+        if (material.OcclusionTexture != null)
+        {
+            graph.OutputNode.TrySetInputDefault(MaterialOutputNode.OcclusionTextureInput,
+                ShaderValue.TextureValue(material.OcclusionTexture, material.OcclusionSampler));
+        }
+        graph.OutputNode.TrySetInputDefault(MaterialOutputNode.OcclusionStrengthInput, ShaderValue.Float(material.OcclusionStrength));
     }
 
     private static Vector4 ToVector(SKColor color)

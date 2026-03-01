@@ -32,16 +32,28 @@
                     Background="#262B31"
                     Padding="4">
                 <StackPanel Spacing="4">
-                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Select">
+                    <Button Classes="MaxToolStripButton"
+                            ToolTip.Tip="Select"
+                            Command="{Binding Options.SetSelectionToolCommand}"
+                            CommandParameter="0">
                         <TextBlock Text="Q" Classes="MaxToolbarGlyph"/>
                     </Button>
-                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Move">
+                    <Button Classes="MaxToolStripButton"
+                            ToolTip.Tip="Move"
+                            Command="{Binding Options.SetGizmoModeCommand}"
+                            CommandParameter="0">
                         <TextBlock Text="W" Classes="MaxToolbarGlyph"/>
                     </Button>
-                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Rotate">
+                    <Button Classes="MaxToolStripButton"
+                            ToolTip.Tip="Rotate"
+                            Command="{Binding Options.SetGizmoModeCommand}"
+                            CommandParameter="1">
                         <TextBlock Text="E" Classes="MaxToolbarGlyph"/>
                     </Button>
-                    <Button Classes="MaxToolStripButton" ToolTip.Tip="Scale">
+                    <Button Classes="MaxToolStripButton"
+                            ToolTip.Tip="Scale"
+                            Command="{Binding Options.SetGizmoModeCommand}"
+                            CommandParameter="2">
                         <TextBlock Text="R" Classes="MaxToolbarGlyph"/>
                     </Button>
                     <Border Height="1" Background="#1C1F23" Margin="0,6"/>
@@ -92,7 +104,12 @@
                                     <MenuItem Header="Rename"
                                               Command="{Binding Actions.RenameSelectionCommand}"
                                               IsEnabled="{Binding Hierarchy.CanRename}"/>
-                                    <MenuItem Header="Delete" IsEnabled="False"/>
+                                    <MenuItem Header="Duplicate"
+                                              Command="{Binding Actions.DuplicateSelectionCommand}"
+                                              IsEnabled="{Binding Commands.CanDuplicateSelection}"/>
+                                    <MenuItem Header="Delete"
+                                              Command="{Binding Actions.DeleteSelectionCommand}"
+                                              IsEnabled="{Binding Hierarchy.CanDelete}"/>
                                 </ContextMenu>
                             </TreeView.ContextMenu>
                             <TreeView.ItemTemplate>

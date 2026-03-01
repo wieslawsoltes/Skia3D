@@ -94,9 +94,44 @@
                                                 LargeChange="6"/>
                                     </StackPanel>
                                     <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
-                                        <Button Content="Edge Loop Select" Classes="InspectorButton" Command="{Binding Actions.SelectEdgeLoopCommand}"/>
-                                        <Button Content="Edge Ring Select" Classes="InspectorButton" Command="{Binding Actions.SelectEdgeRingCommand}"/>
+                                        <Button Content="Edge Loop Select"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.SelectEdgeLoopCommand}"
+                                                IsEnabled="{Binding Commands.CanSelectEdgeLoop}"/>
+                                        <Button Content="Edge Ring Select"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.SelectEdgeRingCommand}"
+                                                IsEnabled="{Binding Commands.CanSelectEdgeRing}"/>
                                     </Grid>
+                                    <TextBlock Classes="SectionTitle" Text="Selection utilities"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Grow Selection"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.GrowSelectionCommand}"
+                                                IsEnabled="{Binding Commands.CanGrowSelection}"/>
+                                        <Button Content="Shrink Selection"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ShrinkSelectionCommand}"
+                                                IsEnabled="{Binding Commands.CanShrinkSelection}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                                        <Button Content="To Vertices"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ConvertSelectionToVerticesCommand}"
+                                                IsEnabled="{Binding Commands.CanConvertSelection}"/>
+                                        <Button Content="To Edges"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ConvertSelectionToEdgesCommand}"
+                                                IsEnabled="{Binding Commands.CanConvertSelection}"/>
+                                        <Button Content="To Faces"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Actions.ConvertSelectionToFacesCommand}"
+                                                IsEnabled="{Binding Commands.CanConvertSelection}"/>
+                                    </Grid>
+                                    <Button Content="Duplicate Selection"
+                                            Classes="InspectorButton"
+                                            Command="{Binding Actions.DuplicateSelectionCommand}"
+                                            IsEnabled="{Binding Commands.CanDuplicateSelection}"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Classes="InspectorRollout" Header="Gizmo and Snapping" IsExpanded="True">
@@ -132,6 +167,10 @@
                                                 SmallChange="0.01"
                                                 LargeChange="0.1"/>
                                     </StackPanel>
+                                    <Button Content="Transform Values..."
+                                            Classes="InspectorButton"
+                                            Command="{Binding Actions.TransformSelectionCommand}"
+                                            IsEnabled="{Binding Commands.CanNumericTransform}"/>
                                 </StackPanel>
                             </Expander>
                             <Expander Classes="InspectorRollout" Header="Modeling Ops" IsExpanded="True">
@@ -161,6 +200,47 @@
                                                 Command="{Binding Actions.LoopCutEdgeLoopCommand}"
                                                 IsEnabled="{Binding Commands.CanLoopCutEdgeLoop}"/>
                                     </Grid>
+                                    <Button x:Name="DetachFacesButton"
+                                            Content="Detach Faces"
+                                            Classes="InspectorButton"
+                                            Command="{Binding Actions.DetachFacesCommand}"
+                                            IsEnabled="{Binding Commands.CanDetachFaces}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Options.ExtrudeDistanceLabel}" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.01"
+                                                Maximum="5.0"
+                                                Value="{Binding Options.ExtrudeDistance, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.2"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Options.InsetDistanceLabel}" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.01"
+                                                Maximum="2.0"
+                                                Value="{Binding Options.InsetDistance, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Options.BevelInsetLabel}" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.0"
+                                                Maximum="2.0"
+                                                Value="{Binding Options.BevelInset, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Options.BevelHeightLabel}" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.0"
+                                                Maximum="2.0"
+                                                Value="{Binding Options.BevelHeight, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
                                     <TextBlock Classes="SectionLabel" Text="Edge tools"/>
                                     <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
                                         <Button x:Name="SplitEdgeButton"
@@ -210,6 +290,15 @@
                                                 Classes="InspectorButton"
                                                 Command="{Binding Actions.WeldVerticesCommand}"/>
                                     </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Options.WeldToleranceLabel}" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.001"
+                                                Maximum="0.1"
+                                                Value="{Binding Options.WeldTolerance, Mode=TwoWay}"
+                                                TickFrequency="0.005"
+                                                SmallChange="0.005"
+                                                LargeChange="0.02"/>
+                                    </StackPanel>
                                     <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
                                         <Button x:Name="CleanupButton"
                                                 Content="Cleanup"
@@ -271,11 +360,20 @@
                             </Expander>
                             <Expander Classes="InspectorRollout" Header="Nudge" IsExpanded="False">
                                 <StackPanel Spacing="8">
-                                    <TextBlock Classes="SectionLabel" Text="Step selection by 0.1 units"/>
+                                    <TextBlock Classes="SectionLabel" Text="Step selection by the current nudge increment"/>
                                     <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
                                         <Button Content="+X" Classes="InspectorButton" Command="{Binding Actions.NudgePosXCommand}"/>
                                         <Button Content="-X" Classes="InspectorButton" Command="{Binding Actions.NudgeNegXCommand}"/>
                                     </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Text="{Binding Options.NudgeStepLabel}" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.01"
+                                                Maximum="1.0"
+                                                Value="{Binding Options.NudgeStep, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
                                 </StackPanel>
                             </Expander>
                             <Expander Classes="InspectorRollout" Header="Proportional Editing" IsExpanded="False">
@@ -635,6 +733,135 @@
                                             IsEnabled="{Binding Motion.CanScrub}"/>
                                 </StackPanel>
                             </Expander>
+                            <Expander Classes="InspectorRollout" Header="Clips" IsExpanded="True">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{Binding Motion.Editor.ClipSummary}" Foreground="#A3AFBD"/>
+                                    <ComboBox Classes="InspectorCombo"
+                                              ItemsSource="{Binding Motion.Editor.Clips}"
+                                              SelectedItem="{Binding Motion.Editor.SelectedClip, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:AnimationClipItem}">
+                                                <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                                        <Button Content="New"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.CreateClipCommand}"/>
+                                        <Button Content="Duplicate"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.DuplicateClipCommand}"
+                                                IsEnabled="{Binding Motion.Editor.CanEditClip}"/>
+                                        <Button Content="Delete"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.DeleteClipCommand}"
+                                                IsEnabled="{Binding Motion.Editor.CanEditClip}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Tracks" IsExpanded="False">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{Binding Motion.Editor.TrackSummary}" Foreground="#A3AFBD"/>
+                                    <ComboBox Classes="InspectorCombo"
+                                              ItemsSource="{Binding Motion.Editor.Tracks}"
+                                              SelectedItem="{Binding Motion.Editor.SelectedTrack, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:AnimationTrackItem}">
+                                                <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add from Selection"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.AddTrackCommand}"
+                                                IsEnabled="{Binding Motion.Editor.CanEditClip}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.RemoveTrackCommand}"
+                                                IsEnabled="{Binding Motion.Editor.CanEditTrack}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Keyframes" IsExpanded="False">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Text="{Binding Motion.Editor.KeySummary}" Foreground="#A3AFBD"/>
+                                    <ComboBox Classes="InspectorCombo"
+                                              ItemsSource="{Binding Motion.Editor.Channels}"
+                                              SelectedItem="{Binding Motion.Editor.SelectedChannel, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:AnimationKeyframeChannel}">
+                                                <TextBlock Text="{Binding}" Foreground="#E8EEF5"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <ListBox ItemsSource="{Binding Motion.Editor.Keyframes}"
+                                             SelectedItem="{Binding Motion.Editor.SelectedKeyframe, Mode=TwoWay}"
+                                             MaxHeight="120">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="{x:Type vm:AnimationKeyframeItem}">
+                                                <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="6">
+                                        <Button Content="Capture"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.SetKeyCommand}"
+                                                IsEnabled="{Binding Motion.CanSetKey}"/>
+                                        <Button Content="Delete"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.DeleteKeyCommand}"
+                                                IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                        <Button Content="Jump"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.JumpToKeyCommand}"
+                                                IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Prev"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.PrevKeyCommand}"
+                                                IsEnabled="{Binding Motion.Editor.HasSelectedTrack}"/>
+                                        <Button Content="Next"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Motion.Editor.NextKeyCommand}"
+                                                IsEnabled="{Binding Motion.Editor.HasSelectedTrack}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                        <TextBlock Text="Time" Foreground="#E8EEF5"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Motion.Editor.KeyTimeText, Mode=TwoWay}"
+                                                 IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                        <TextBlock Grid.Row="1" Text="X" Foreground="#E8EEF5"/>
+                                        <TextBox Grid.Row="1" Grid.Column="1"
+                                                 Text="{Binding Motion.Editor.KeyValueXText, Mode=TwoWay}"
+                                                 IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                        <TextBlock Grid.Row="2" Text="Y" Foreground="#E8EEF5"/>
+                                        <TextBox Grid.Row="2" Grid.Column="1"
+                                                 Text="{Binding Motion.Editor.KeyValueYText, Mode=TwoWay}"
+                                                 IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                        <TextBlock Grid.Row="3" Text="Z" Foreground="#E8EEF5"/>
+                                        <TextBox Grid.Row="3" Grid.Column="1"
+                                                 Text="{Binding Motion.Editor.KeyValueZText, Mode=TwoWay}"
+                                                 IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                    </Grid>
+                                    <Button Content="Apply Key"
+                                            Classes="InspectorButton"
+                                            Command="{Binding Motion.Editor.ApplyKeyEditsCommand}"
+                                            IsEnabled="{Binding Motion.Editor.CanEditKey}"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Curve Editor" IsExpanded="False">
+                                <Border Background="#20252B" BorderBrush="#1F2328" BorderThickness="1" Padding="6">
+                                    <controls:AnimationCurveEditorControl Height="160"
+                                                                          Series="{Binding Motion.Editor.CurveSeries}"
+                                                                          Duration="{Binding Motion.Editor.SelectedClipDuration}"
+                                                                          PlayheadTime="{Binding Motion.Time}"
+                                                                          SelectedTime="{Binding Motion.Editor.SelectedKeyTime}"/>
+                                </Border>
+                            </Expander>
                         </StackPanel>
                     </ScrollViewer>
                 </TabItem>
@@ -673,8 +900,244 @@
                                     </Grid>
                                 </StackPanel>
                             </Expander>
+                            <Expander Classes="InspectorRollout" Header="Rendering" IsExpanded="False">
+                                <StackPanel Spacing="10">
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="SectionTitle" Text="Surface options"/>
+                                        <CheckBox Content="Backface culling"
+                                                  IsChecked="{Binding Options.BackfaceCullingEnabled, Mode=TwoWay}"
+                                                  Foreground="#E8EEF5"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="SectionTitle" Text="Environment lighting"/>
+                                        <CheckBox Content="Image based lighting"
+                                                  IsChecked="{Binding Options.ImageBasedLightingEnabled, Mode=TwoWay}"
+                                                  Foreground="#E8EEF5"/>
+                                        <StackPanel Spacing="4" IsEnabled="{Binding Options.ImageBasedLightingEnabled}">
+                                            <TextBlock Text="{Binding Options.EnvironmentIntensityLabel}" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="2"
+                                                    Value="{Binding Options.EnvironmentIntensity, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="SectionTitle" Text="Shadow tuning"/>
+                                        <CheckBox Content="Enable shadows"
+                                                  IsChecked="{Binding Options.ShadowEnabled, Mode=TwoWay}"
+                                                  Foreground="#E8EEF5"/>
+                                        <StackPanel Spacing="6" IsEnabled="{Binding Options.ShadowEnabled}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.ShadowMapSizeLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="64"
+                                                        Maximum="2048"
+                                                        Value="{Binding Options.ShadowMapSize, Mode=TwoWay}"
+                                                        TickFrequency="128"
+                                                        SmallChange="64"
+                                                        LargeChange="256"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.ShadowBiasLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="0.01"
+                                                        Value="{Binding Options.ShadowBias, Mode=TwoWay}"
+                                                        TickFrequency="0.0005"
+                                                        SmallChange="0.0005"
+                                                        LargeChange="0.001"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.ShadowNormalBiasLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="0.01"
+                                                        Value="{Binding Options.ShadowNormalBias, Mode=TwoWay}"
+                                                        TickFrequency="0.0005"
+                                                        SmallChange="0.0005"
+                                                        LargeChange="0.001"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.ShadowStrengthLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0.1"
+                                                        Maximum="1.0"
+                                                        Value="{Binding Options.ShadowStrength, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.ShadowPcfRadiusLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="4"
+                                                        Value="{Binding Options.ShadowPcfRadius, Mode=TwoWay}"
+                                                        TickFrequency="1"
+                                                        SmallChange="1"
+                                                        LargeChange="1"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <StackPanel Spacing="6">
+                                        <TextBlock Classes="SectionTitle" Text="SSAO tuning"/>
+                                        <CheckBox Content="Enable SSAO"
+                                                  IsChecked="{Binding Options.SsaoEnabled, Mode=TwoWay}"
+                                                  Foreground="#E8EEF5"/>
+                                        <StackPanel Spacing="6" IsEnabled="{Binding Options.SsaoEnabled}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.SsaoRadiusLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="1"
+                                                        Maximum="24"
+                                                        Value="{Binding Options.SsaoRadius, Mode=TwoWay}"
+                                                        TickFrequency="1"
+                                                        SmallChange="1"
+                                                        LargeChange="2"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.SsaoIntensityLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Options.SsaoIntensity, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.SsaoDepthBiasLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="0.01"
+                                                        Value="{Binding Options.SsaoDepthBias, Mode=TwoWay}"
+                                                        TickFrequency="0.0005"
+                                                        SmallChange="0.0005"
+                                                        LargeChange="0.001"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.SsaoSampleCountLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="1"
+                                                        Maximum="16"
+                                                        Value="{Binding Options.SsaoSampleCount, Mode=TwoWay}"
+                                                        TickFrequency="1"
+                                                        SmallChange="1"
+                                                        LargeChange="1"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Post FX" IsExpanded="False">
+                                <StackPanel Spacing="8">
+                                    <CheckBox Content="Enable post processing"
+                                              IsChecked="{Binding Options.PostProcessingEnabled, Mode=TwoWay}"
+                                              Foreground="#E8EEF5"/>
+                                    <StackPanel Spacing="8" IsEnabled="{Binding Options.PostProcessingEnabled}">
+                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                            <TextBlock Classes="SectionLabel" Text="Tone mapping" VerticalAlignment="Center"/>
+                                            <ComboBox Grid.Column="1"
+                                                      Classes="InspectorCombo"
+                                                      Width="180"
+                                                      SelectedIndex="{Binding Options.ToneMappingIndex, Mode=TwoWay}">
+                                                <ComboBoxItem Content="None"/>
+                                                <ComboBoxItem Content="Reinhard"/>
+                                                <ComboBoxItem Content="ACES"/>
+                                            </ComboBox>
+                                        </Grid>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Text="{Binding Options.PostExposureLabel}" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="3"
+                                                    Value="{Binding Options.PostExposure, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.2"/>
+                                        </StackPanel>
+                                        <CheckBox Content="Bloom"
+                                                  IsChecked="{Binding Options.BloomEnabled, Mode=TwoWay}"
+                                                  Foreground="#E8EEF5"/>
+                                        <StackPanel Spacing="6" IsEnabled="{Binding Options.BloomEnabled}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.BloomThresholdLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Options.BloomThreshold, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.BloomIntensityLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="2"
+                                                        Value="{Binding Options.BloomIntensity, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.BloomRadiusLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="16"
+                                                        Value="{Binding Options.BloomRadius, Mode=TwoWay}"
+                                                        TickFrequency="1"
+                                                        SmallChange="1"
+                                                        LargeChange="2"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                        <CheckBox Content="FXAA"
+                                                  IsChecked="{Binding Options.FxaaEnabled, Mode=TwoWay}"
+                                                  Foreground="#E8EEF5"/>
+                                        <StackPanel Spacing="6" IsEnabled="{Binding Options.FxaaEnabled}">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.FxaaEdgeThresholdLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Options.FxaaEdgeThreshold, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.FxaaEdgeThresholdMinLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="0.5"
+                                                        Value="{Binding Options.FxaaEdgeThresholdMin, Mode=TwoWay}"
+                                                        TickFrequency="0.02"
+                                                        SmallChange="0.02"
+                                                        LargeChange="0.05"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{Binding Options.FxaaSubpixelBlendLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Options.FxaaSubpixelBlend, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
                             <Expander Classes="InspectorRollout" Header="Quality" IsExpanded="False">
                                 <StackPanel Spacing="6">
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="RenderScaleLabel" Text="{Binding Options.RenderScaleLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="RenderScaleSlider"
+                                                Minimum="0.25"
+                                                Maximum="1"
+                                                Value="{Binding Options.RenderScale, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock x:Name="RenderWorkerCountLabel" Text="{Binding Options.RenderWorkerCountLabel}" Foreground="#A3AFBD"/>
+                                        <Slider x:Name="RenderWorkerCountSlider"
+                                                Minimum="1"
+                                                Maximum="64"
+                                                Value="{Binding Options.RenderWorkerCount, Mode=TwoWay}"
+                                                IsSnapToTickEnabled="True"
+                                                TickFrequency="1"
+                                                SmallChange="1"
+                                                LargeChange="4"/>
+                                    </StackPanel>
                                     <StackPanel Spacing="4">
                                         <TextBlock x:Name="MeshPrecisionLabel" Text="{Binding Options.MeshPrecisionLabel}" Foreground="#A3AFBD"/>
                                         <Slider x:Name="MeshPrecisionSlider"
@@ -700,6 +1163,29 @@
                             <Expander Classes="InspectorRollout" Header="Material Editor" IsExpanded="False">
                                 <StackPanel Spacing="8">
                                     <TextBlock Text="{Binding Material.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <Border Background="#20252B" BorderBrush="#1F2328" BorderThickness="1" CornerRadius="2" Padding="6">
+                                        <controls:MaterialPreviewControl Height="120"
+                                                                          Material="{Binding Material.SelectedMaterial}"
+                                                                          Stamp="{Binding Material.PreviewStamp}"/>
+                                    </Border>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Classes="SectionLabel" Text="Shading model" VerticalAlignment="Center"/>
+                                        <ComboBox Grid.Column="1"
+                                                  Classes="InspectorCombo"
+                                                  SelectedIndex="{Binding Material.ShadingModelIndex, Mode=TwoWay}">
+                                            <ComboBoxItem Content="Phong"/>
+                                            <ComboBoxItem Content="PBR (Metal/Rough)"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <CheckBox Content="Vertex color"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Material.UseVertexColor, Mode=TwoWay}"/>
+                                        <CheckBox Content="Double sided"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Material.DoubleSided, Mode=TwoWay}"/>
+                                    </Grid>
+                                    <TextBlock Classes="SectionTitle" Text="PBR Inputs"/>
                                     <StackPanel Spacing="4">
                                         <TextBlock Text="{Binding Material.BaseColorLabel}" Foreground="#A3AFBD"/>
                                         <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
@@ -818,6 +1304,235 @@
                                             </ComboBox.ItemTemplate>
                                         </ComboBox>
                                     </StackPanel>
+                                    <Expander Classes="InspectorRollout" Header="Texture Slots" IsExpanded="False">
+                                        <StackPanel Spacing="8">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="SectionLabel" Text="Base color"/>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSlotOptions}"
+                                                          SelectedItem="{Binding Material.BaseColorTextureSlot, Mode=TwoWay}"
+                                                          IsEnabled="{Binding Material.IsBaseColorTextureConstant}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:TextureSlotOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSources}"
+                                                          SelectedIndex="{Binding Material.BaseColorTextureSourceIndex, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding Material.BaseColorTextureStrengthLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Material.BaseColorTextureStrength, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Material.IsBaseColorTextureConstant}"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="SectionLabel" Text="Metallic/Roughness"/>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSlotOptions}"
+                                                          SelectedItem="{Binding Material.MetallicRoughnessTextureSlot, Mode=TwoWay}"
+                                                          IsEnabled="{Binding Material.IsMetallicRoughnessTextureConstant}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:TextureSlotOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSources}"
+                                                          SelectedIndex="{Binding Material.MetallicRoughnessTextureSourceIndex, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding Material.MetallicRoughnessTextureStrengthLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Material.MetallicRoughnessTextureStrength, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Material.IsMetallicRoughnessTextureConstant}"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="SectionLabel" Text="Normal"/>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSlotOptions}"
+                                                          SelectedItem="{Binding Material.NormalTextureSlot, Mode=TwoWay}"
+                                                          IsEnabled="{Binding Material.IsNormalTextureConstant}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:TextureSlotOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSources}"
+                                                          SelectedIndex="{Binding Material.NormalTextureSourceIndex, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding Material.NormalStrengthLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="4"
+                                                        Value="{Binding Material.NormalStrength, Mode=TwoWay}"
+                                                        TickFrequency="0.1"
+                                                        SmallChange="0.1"
+                                                        LargeChange="0.5"
+                                                        IsEnabled="{Binding Material.IsNormalTextureConstant}"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="SectionLabel" Text="Emissive"/>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSlotOptions}"
+                                                          SelectedItem="{Binding Material.EmissiveTextureSlot, Mode=TwoWay}"
+                                                          IsEnabled="{Binding Material.IsEmissiveTextureConstant}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:TextureSlotOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSources}"
+                                                          SelectedIndex="{Binding Material.EmissiveTextureSourceIndex, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding Material.EmissiveStrengthLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Material.EmissiveStrength, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Material.IsEmissiveTextureConstant}"/>
+                                            </StackPanel>
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Classes="SectionLabel" Text="Occlusion"/>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSlotOptions}"
+                                                          SelectedItem="{Binding Material.OcclusionTextureSlot, Mode=TwoWay}"
+                                                          IsEnabled="{Binding Material.IsOcclusionTextureConstant}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:TextureSlotOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <ComboBox Classes="InspectorCombo"
+                                                          ItemsSource="{Binding Material.TextureSources}"
+                                                          SelectedIndex="{Binding Material.OcclusionTextureSourceIndex, Mode=TwoWay}">
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate DataType="{x:Type vm:ShaderSourceOption}">
+                                                            <TextBlock Text="{Binding Label}" Foreground="#E8EEF5"/>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock Text="{Binding Material.OcclusionStrengthLabel}" Foreground="#A3AFBD"/>
+                                                <Slider Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Material.OcclusionStrength, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Material.IsOcclusionTextureConstant}"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Expander>
+                                    <Expander Classes="InspectorRollout" Header="UV" IsExpanded="False">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="{Binding Material.UvScaleLabel}" Foreground="#A3AFBD"/>
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                                <TextBlock Text="Scale X" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Column="1"
+                                                        Minimum="0.1"
+                                                        Maximum="10"
+                                                        Value="{Binding Material.UvScaleX, Mode=TwoWay}"
+                                                        TickFrequency="0.1"
+                                                        SmallChange="0.1"
+                                                        LargeChange="0.5"/>
+                                                <TextBlock Grid.Row="1" Text="Scale Y" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="1" Grid.Column="1"
+                                                        Minimum="0.1"
+                                                        Maximum="10"
+                                                        Value="{Binding Material.UvScaleY, Mode=TwoWay}"
+                                                        TickFrequency="0.1"
+                                                        SmallChange="0.1"
+                                                        LargeChange="0.5"/>
+                                            </Grid>
+                                            <TextBlock Text="{Binding Material.UvOffsetLabel}" Foreground="#A3AFBD"/>
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                                <TextBlock Text="Offset X" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Column="1"
+                                                        Minimum="-2"
+                                                        Maximum="2"
+                                                        Value="{Binding Material.UvOffsetX, Mode=TwoWay}"
+                                                        TickFrequency="0.1"
+                                                        SmallChange="0.1"
+                                                        LargeChange="0.5"/>
+                                                <TextBlock Grid.Row="1" Text="Offset Y" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="1" Grid.Column="1"
+                                                        Minimum="-2"
+                                                        Maximum="2"
+                                                        Value="{Binding Material.UvOffsetY, Mode=TwoWay}"
+                                                        TickFrequency="0.1"
+                                                        SmallChange="0.1"
+                                                        LargeChange="0.5"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Expander>
+                                    <Expander Classes="InspectorRollout" Header="Phong" IsExpanded="False"
+                                              IsEnabled="{Binding Material.IsPhongModel}">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock Text="{Binding Material.AmbientLabel}" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.Ambient, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Text="{Binding Material.DiffuseLabel}" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.Diffuse, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Text="{Binding Material.SpecularLabel}" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Material.Specular, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"/>
+                                            <TextBlock Text="{Binding Material.ShininessLabel}" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="1"
+                                                    Maximum="128"
+                                                    Value="{Binding Material.Shininess, Mode=TwoWay}"
+                                                    TickFrequency="1"
+                                                    SmallChange="1"
+                                                    LargeChange="8"/>
+                                        </StackPanel>
+                                    </Expander>
                                     <TextBlock Classes="SectionTitle" Text="Shader Graph"/>
                                     <TextBlock Classes="SectionLabel" Text="Click output then input to connect. Click input to clear."/>
                                     <controls:MaterialGraphCanvasControl DataContext="{Binding Material.Canvas}" Height="320"/>
@@ -848,6 +1563,701 @@
                                     <Button Content="Add Normal Map"
                                             Classes="InspectorButton"
                                             Command="{Binding Material.AddNormalMapNodeCommand}"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="VFX (Particles)" IsExpanded="False">
+                                <StackPanel Spacing="8" IsEnabled="{Binding Vfx.HasSelection}">
+                                    <TextBlock Text="{Binding Vfx.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add Emitter"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Vfx.AddEmitterCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Vfx.RemoveEmitterCommand}"
+                                                IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <CheckBox Content="Enabled"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Vfx.EmitterEnabled, Mode=TwoWay}"
+                                                  IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                        <CheckBox Content="Emitting"
+                                                  Foreground="#E8EEF5"
+                                                  IsChecked="{Binding Vfx.IsEmitting, Mode=TwoWay}"
+                                                  IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                    </Grid>
+                                    <CheckBox Content="World space"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Vfx.WorldSpace, Mode=TwoWay}"
+                                              IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Max particles" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="10"
+                                                Maximum="2000"
+                                                Value="{Binding Vfx.MaxParticles, Mode=TwoWay}"
+                                                TickFrequency="10"
+                                                SmallChange="10"
+                                                LargeChange="50"
+                                                IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Emission rate" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0"
+                                                Maximum="200"
+                                                Value="{Binding Vfx.EmissionRate, Mode=TwoWay}"
+                                                TickFrequency="5"
+                                                SmallChange="1"
+                                                LargeChange="10"
+                                                IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Lifetime" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.1"
+                                                Maximum="10"
+                                                Value="{Binding Vfx.Lifetime, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"
+                                                IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Start size" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0.01"
+                                                    Maximum="2"
+                                                    Value="{Binding Vfx.StartSize, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.2"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                        </StackPanel>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="End size" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="2"
+                                                    Value="{Binding Vfx.EndSize, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.2"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Base velocity" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="X" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="-5"
+                                                    Maximum="5"
+                                                    Value="{Binding Vfx.BaseVelX, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.1"
+                                                    LargeChange="1"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                            <TextBlock Grid.Row="1" Text="Y" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="-5"
+                                                    Maximum="5"
+                                                    Value="{Binding Vfx.BaseVelY, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.1"
+                                                    LargeChange="1"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                            <TextBlock Grid.Row="2" Text="Z" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="-5"
+                                                    Maximum="5"
+                                                    Value="{Binding Vfx.BaseVelZ, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.1"
+                                                    LargeChange="1"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Velocity randomness" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="X" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="5"
+                                                    Value="{Binding Vfx.VelRandX, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                            <TextBlock Grid.Row="1" Text="Y" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="5"
+                                                    Value="{Binding Vfx.VelRandY, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                            <TextBlock Grid.Row="2" Text="Z" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="0"
+                                                    Maximum="5"
+                                                    Value="{Binding Vfx.VelRandZ, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Start color" Foreground="#A3AFBD"/>
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                                <TextBlock Text="R" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.StartColorR, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                                <TextBlock Grid.Row="1" Text="G" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="1" Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.StartColorG, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                                <TextBlock Grid.Row="2" Text="B" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="2" Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.StartColorB, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                                <TextBlock Grid.Row="3" Text="A" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="3" Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.StartColorA, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="End color" Foreground="#A3AFBD"/>
+                                            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                                <TextBlock Text="R" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.EndColorR, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                                <TextBlock Grid.Row="1" Text="G" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="1" Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.EndColorG, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                                <TextBlock Grid.Row="2" Text="B" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="2" Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.EndColorB, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                                <TextBlock Grid.Row="3" Text="A" Foreground="#E8EEF5"/>
+                                                <Slider Grid.Row="3" Grid.Column="1"
+                                                        Minimum="0"
+                                                        Maximum="1"
+                                                        Value="{Binding Vfx.EndColorA, Mode=TwoWay}"
+                                                        TickFrequency="0.05"
+                                                        SmallChange="0.05"
+                                                        LargeChange="0.1"
+                                                        IsEnabled="{Binding Vfx.HasEmitter}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Physics" IsExpanded="False">
+                                <StackPanel Spacing="8" IsEnabled="{Binding Physics.HasSelection}">
+                                    <TextBlock Text="{Binding Physics.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock Classes="SectionTitle" Text="Rigid Body"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Physics.AddRigidBodyCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Physics.RemoveRigidBodyCommand}"
+                                                IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    </Grid>
+                                    <CheckBox Content="Enabled"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Physics.BodyEnabled, Mode=TwoWay}"
+                                              IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Classes="SectionLabel" Text="Body type" VerticalAlignment="Center"/>
+                                        <ComboBox Grid.Column="1"
+                                                  Classes="InspectorCombo"
+                                                  SelectedIndex="{Binding Physics.BodyTypeIndex, Mode=TwoWay}"
+                                                  IsEnabled="{Binding Physics.HasRigidBody}">
+                                            <ComboBoxItem Content="Static"/>
+                                            <ComboBoxItem Content="Dynamic"/>
+                                            <ComboBoxItem Content="Kinematic"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Mass" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.01"
+                                                Maximum="50"
+                                                Value="{Binding Physics.Mass, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="1"
+                                                IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    </StackPanel>
+                                    <CheckBox Content="Use gravity"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Physics.UseGravity, Mode=TwoWay}"
+                                              IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Restitution" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0"
+                                                Maximum="1"
+                                                Value="{Binding Physics.Restitution, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"
+                                                IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Friction" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0"
+                                                Maximum="1"
+                                                Value="{Binding Physics.Friction, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"
+                                                IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Linear damping" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Physics.LinearDamping, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"
+                                                    IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                        </StackPanel>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Angular damping" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0"
+                                                    Maximum="1"
+                                                    Value="{Binding Physics.AngularDamping, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.1"
+                                                    IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <CheckBox Content="Awake"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Physics.IsAwake, Mode=TwoWay}"
+                                              IsEnabled="{Binding Physics.HasRigidBody}"/>
+                                    <TextBlock Classes="SectionTitle" Text="Collider"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Physics.AddColliderCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Physics.RemoveColliderCommand}"
+                                                IsEnabled="{Binding Physics.HasCollider}"/>
+                                    </Grid>
+                                    <CheckBox Content="Enabled"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Physics.ColliderEnabled, Mode=TwoWay}"
+                                              IsEnabled="{Binding Physics.HasCollider}"/>
+                                    <CheckBox Content="Trigger"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Physics.IsTrigger, Mode=TwoWay}"
+                                              IsEnabled="{Binding Physics.HasCollider}"/>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                        <TextBlock Classes="SectionLabel" Text="Shape" VerticalAlignment="Center"/>
+                                        <ComboBox Grid.Column="1"
+                                                  Classes="InspectorCombo"
+                                                  SelectedIndex="{Binding Physics.ColliderShapeIndex, Mode=TwoWay}"
+                                                  IsEnabled="{Binding Physics.HasCollider}">
+                                            <ComboBoxItem Content="Sphere"/>
+                                            <ComboBoxItem Content="Box"/>
+                                        </ComboBox>
+                                    </Grid>
+                                    <StackPanel Spacing="4" IsVisible="{Binding Physics.IsSphereCollider}">
+                                        <TextBlock Classes="SectionLabel" Text="Radius" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.01"
+                                                Maximum="10"
+                                                Value="{Binding Physics.ColliderRadius, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.5"
+                                                IsEnabled="{Binding Physics.HasCollider}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4" IsVisible="{Binding Physics.IsBoxCollider}">
+                                        <TextBlock Classes="SectionLabel" Text="Size" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="X" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="0.01"
+                                                    Maximum="10"
+                                                    Value="{Binding Physics.ColliderSizeX, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Physics.HasCollider}"/>
+                                            <TextBlock Grid.Row="1" Text="Y" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="0.01"
+                                                    Maximum="10"
+                                                    Value="{Binding Physics.ColliderSizeY, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Physics.HasCollider}"/>
+                                            <TextBlock Grid.Row="2" Text="Z" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="0.01"
+                                                    Maximum="10"
+                                                    Value="{Binding Physics.ColliderSizeZ, Mode=TwoWay}"
+                                                    TickFrequency="0.05"
+                                                    SmallChange="0.05"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Physics.HasCollider}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Offset" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="X" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="-5"
+                                                    Maximum="5"
+                                                    Value="{Binding Physics.ColliderOffsetX, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Physics.HasCollider}"/>
+                                            <TextBlock Grid.Row="1" Text="Y" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="-5"
+                                                    Maximum="5"
+                                                    Value="{Binding Physics.ColliderOffsetY, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Physics.HasCollider}"/>
+                                            <TextBlock Grid.Row="2" Text="Z" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="-5"
+                                                    Maximum="5"
+                                                    Value="{Binding Physics.ColliderOffsetZ, Mode=TwoWay}"
+                                                    TickFrequency="0.1"
+                                                    SmallChange="0.1"
+                                                    LargeChange="0.5"
+                                                    IsEnabled="{Binding Physics.HasCollider}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Navigation" IsExpanded="False">
+                                <StackPanel Spacing="8" IsEnabled="{Binding Navigation.HasSelection}">
+                                    <TextBlock Text="{Binding Navigation.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock Classes="SectionTitle" Text="Nav Grid"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.AddGridCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.RemoveGridCommand}"
+                                                IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                    </Grid>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Width" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="2"
+                                                    Maximum="128"
+                                                    TickFrequency="1"
+                                                    IsSnapToTickEnabled="True"
+                                                    Value="{Binding Navigation.GridWidth, Mode=TwoWay}"
+                                                    IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                        </StackPanel>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Height" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="2"
+                                                    Maximum="128"
+                                                    TickFrequency="1"
+                                                    IsSnapToTickEnabled="True"
+                                                    Value="{Binding Navigation.GridHeight, Mode=TwoWay}"
+                                                    IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Cell size" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.2"
+                                                Maximum="5"
+                                                Value="{Binding Navigation.CellSize, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"
+                                                IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Origin" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="X" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Column="1"
+                                                    Minimum="-20"
+                                                    Maximum="20"
+                                                    Value="{Binding Navigation.OriginX, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.5"
+                                                    LargeChange="2"
+                                                    IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                            <TextBlock Grid.Row="1" Text="Y" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="1" Grid.Column="1"
+                                                    Minimum="-10"
+                                                    Maximum="10"
+                                                    Value="{Binding Navigation.OriginY, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.5"
+                                                    LargeChange="2"
+                                                    IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                            <TextBlock Grid.Row="2" Text="Z" Foreground="#E8EEF5"/>
+                                            <Slider Grid.Row="2" Grid.Column="1"
+                                                    Minimum="-20"
+                                                    Maximum="20"
+                                                    Value="{Binding Navigation.OriginZ, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.5"
+                                                    LargeChange="2"
+                                                    IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Apply Grid"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.ApplyGridCommand}"
+                                                IsEnabled="{Binding Navigation.HasNavGrid}"/>
+                                        <Button Content="Bake From Bounds"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.BakeGridCommand}"/>
+                                    </Grid>
+                                    <TextBlock Classes="SectionTitle" Text="Agent"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.AddAgentCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.RemoveAgentCommand}"
+                                                IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Speed" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.1"
+                                                Maximum="10"
+                                                Value="{Binding Navigation.AgentSpeed, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"
+                                                IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Stopping distance" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.01"
+                                                Maximum="2"
+                                                Value="{Binding Navigation.AgentStoppingDistance, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.2"
+                                                IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Destination" Foreground="#A3AFBD"/>
+                                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="6" RowSpacing="4">
+                                            <TextBlock Text="X" Foreground="#E8EEF5"/>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding Navigation.DestinationX, Mode=TwoWay}"
+                                                     IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                            <TextBlock Grid.Row="1" Text="Y" Foreground="#E8EEF5"/>
+                                            <TextBox Grid.Row="1" Grid.Column="1"
+                                                     Text="{Binding Navigation.DestinationY, Mode=TwoWay}"
+                                                     IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                            <TextBlock Grid.Row="2" Text="Z" Foreground="#E8EEF5"/>
+                                            <TextBox Grid.Row="2" Grid.Column="1"
+                                                     Text="{Binding Navigation.DestinationZ, Mode=TwoWay}"
+                                                     IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                        </Grid>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Set Destination"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.ApplyDestinationCommand}"
+                                                IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                        <Button Content="Clear"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Navigation.ClearDestinationCommand}"
+                                                IsEnabled="{Binding Navigation.HasNavAgent}"/>
+                                    </Grid>
+                                    <TextBlock Text="{Binding Navigation.PathLabel}" Foreground="#A3AFBD"/>
+                                </StackPanel>
+                            </Expander>
+                            <Expander Classes="InspectorRollout" Header="Audio" IsExpanded="False">
+                                <StackPanel Spacing="8" IsEnabled="{Binding Audio.HasSelection}">
+                                    <TextBlock Text="{Binding Audio.SelectionLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock Classes="SectionTitle" Text="Listener"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.AddListenerCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.RemoveListenerCommand}"
+                                                IsEnabled="{Binding Audio.HasListener}"/>
+                                    </Grid>
+                                    <CheckBox Content="Enabled"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Audio.ListenerEnabled, Mode=TwoWay}"
+                                              IsEnabled="{Binding Audio.HasListener}"/>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Volume" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0"
+                                                Maximum="2"
+                                                Value="{Binding Audio.ListenerVolume, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"
+                                                IsEnabled="{Binding Audio.HasListener}"/>
+                                    </StackPanel>
+                                    <TextBlock Classes="SectionTitle" Text="Source"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Add"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.AddSourceCommand}"/>
+                                        <Button Content="Remove"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.RemoveSourceCommand}"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </Grid>
+                                    <CheckBox Content="Enabled"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Audio.SourceEnabled, Mode=TwoWay}"
+                                              IsEnabled="{Binding Audio.HasSource}"/>
+                                    <CheckBox Content="Loop"
+                                              Foreground="#E8EEF5"
+                                              IsChecked="{Binding Audio.SourceLoop, Mode=TwoWay}"
+                                              IsEnabled="{Binding Audio.HasSource}"/>
+                                    <TextBlock Text="{Binding Audio.ClipLabel}" Foreground="#A3AFBD"/>
+                                    <TextBlock Text="{Binding Audio.PlaybackLabel}" Foreground="#A3AFBD"/>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Play"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.PlayCommand}"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                        <Button Content="Stop"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.StopCommand}"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Clip duration" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.1"
+                                                Maximum="5"
+                                                Value="{Binding Audio.ClipDuration, Mode=TwoWay}"
+                                                TickFrequency="0.1"
+                                                SmallChange="0.1"
+                                                LargeChange="0.5"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <Button Content="Create Clip"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.CreateClipCommand}"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                        <Button Content="Clear Clip"
+                                                Classes="InspectorButton"
+                                                Command="{Binding Audio.ClearClipCommand}"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </Grid>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Volume" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0"
+                                                Maximum="2"
+                                                Value="{Binding Audio.SourceVolume, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Pitch" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0.5"
+                                                Maximum="2"
+                                                Value="{Binding Audio.SourcePitch, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </StackPanel>
+                                    <StackPanel Spacing="4">
+                                        <TextBlock Classes="SectionLabel" Text="Spatial blend" Foreground="#A3AFBD"/>
+                                        <Slider Minimum="0"
+                                                Maximum="1"
+                                                Value="{Binding Audio.SourceSpatialBlend, Mode=TwoWay}"
+                                                TickFrequency="0.05"
+                                                SmallChange="0.05"
+                                                LargeChange="0.1"
+                                                IsEnabled="{Binding Audio.HasSource}"/>
+                                    </StackPanel>
+                                    <Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Min distance" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="0.1"
+                                                    Maximum="50"
+                                                    Value="{Binding Audio.SourceMinDistance, Mode=TwoWay}"
+                                                    TickFrequency="0.5"
+                                                    SmallChange="0.5"
+                                                    LargeChange="2"
+                                                    IsEnabled="{Binding Audio.HasSource}"/>
+                                        </StackPanel>
+                                        <StackPanel Spacing="4">
+                                            <TextBlock Classes="SectionLabel" Text="Max distance" Foreground="#A3AFBD"/>
+                                            <Slider Minimum="1"
+                                                    Maximum="100"
+                                                    Value="{Binding Audio.SourceMaxDistance, Mode=TwoWay}"
+                                                    TickFrequency="1"
+                                                    SmallChange="1"
+                                                    LargeChange="5"
+                                                    IsEnabled="{Binding Audio.HasSource}"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </StackPanel>
                             </Expander>
                         </StackPanel>

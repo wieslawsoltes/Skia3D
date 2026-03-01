@@ -1,10 +1,59 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Skia3D.Sample.Controls"
+             xmlns:dockControls="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
+             xmlns:dockCore="clr-namespace:Dock.Model.Core;assembly=Dock.Model"
+             xmlns:dockReactive="clr-namespace:Dock.Model.ReactiveUI.Controls;assembly=Dock.Model.ReactiveUI"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
              x:Class="Skia3D.Sample.App"
              RequestedThemeVariant="Dark">
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.v2.xaml" />
+        <StyleInclude Source="avares://Dock.Avalonia.Themes.Fluent/DockFluentTheme.axaml" />
+        <Style Selector="dockControls|DocumentControl">
+            <Setter Property="HeaderTemplate">
+                <DataTemplate DataType="{x:Type dockCore:IDockable}"
+                              x:DataType="dockCore:IDockable">
+                    <TextBlock Text="{Binding Title}"/>
+                </DataTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="dockControls|ToolControl">
+            <Setter Property="HeaderTemplate">
+                <DataTemplate DataType="{x:Type dockCore:IDockable}"
+                              x:DataType="dockCore:IDockable">
+                    <TextBlock Text="{Binding Title}"/>
+                </DataTemplate>
+            </Setter>
+        </Style>
     </Application.Styles>
+    <Application.DataTemplates>
+        <DataTemplate DataType="{x:Type dockReactive:Document}"
+                      x:DataType="dockReactive:Document">
+            <ContentControl Content="{Binding Context}"/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type dockReactive:Tool}"
+                      x:DataType="dockReactive:Tool">
+            <ContentControl Content="{Binding Context}"/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:ViewportDockContext}"
+                      x:DataType="vm:ViewportDockContext">
+            <controls:ViewportDockControl/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:SceneExplorerDockContext}"
+                      x:DataType="vm:SceneExplorerDockContext">
+            <controls:SceneExplorerControl DataContext="{Binding CommandPanel}"/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:CommandPanelDockContext}"
+                      x:DataType="vm:CommandPanelDockContext">
+            <controls:CommandPanelControl DataContext="{Binding CommandPanel}"/>
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type vm:TimelineDockContext}"
+                      x:DataType="vm:TimelineDockContext">
+            <controls:TimelineControl/>
+        </DataTemplate>
+    </Application.DataTemplates>
 </Application>

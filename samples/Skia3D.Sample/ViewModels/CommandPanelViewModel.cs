@@ -11,6 +11,10 @@ public sealed class CommandPanelViewModel : ViewModelBase
         Hierarchy = new HierarchyPanelViewModel();
         Motion = new MotionPanelViewModel();
         Commands = new CommandStateViewModel();
+        Vfx = new VfxPanelViewModel();
+        Physics = new PhysicsPanelViewModel();
+        Navigation = new NavigationPanelViewModel();
+        Audio = new AudioPanelViewModel();
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Actions = actions ?? throw new ArgumentNullException(nameof(actions));
         Material = material ?? throw new ArgumentNullException(nameof(material));
@@ -24,6 +28,14 @@ public sealed class CommandPanelViewModel : ViewModelBase
     public MotionPanelViewModel Motion { get; }
 
     public CommandStateViewModel Commands { get; }
+
+    public VfxPanelViewModel Vfx { get; }
+
+    public PhysicsPanelViewModel Physics { get; }
+
+    public NavigationPanelViewModel Navigation { get; }
+
+    public AudioPanelViewModel Audio { get; }
 
     public InspectorOptionsViewModel Options { get; }
 

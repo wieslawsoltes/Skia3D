@@ -1,3 +1,6 @@
+using System;
+using System.Reactive;
+using ReactiveUI;
 using Skia3D.Editor;
 
 namespace Skia3D.Sample.ViewModels;
@@ -18,6 +21,17 @@ public sealed class MotionPanelViewModel : ViewModelBase
     private double _time;
     private double _timeMax = 1.0;
     private string _timeLabel = "Time: --";
+    private bool _autoKeyEnabled;
+    private bool _canSetKey;
+
+    public MotionPanelViewModel()
+    {
+        Editor = new AnimationEditorViewModel();
+        var canSetKey = this.WhenAnyValue(vm => vm.CanSetKey);
+        SetKeyCommand = ReactiveCommand.Create(() => { }, canSetKey);
+    }
+
+    public AnimationEditorViewModel Editor { get; }
 
     public bool CanPlay
     {
@@ -228,4 +242,36 @@ public sealed class MotionPanelViewModel : ViewModelBase
             RaisePropertyChanged();
         }
     }
+
+    public bool AutoKeyEnabled
+    {
+        get => _autoKeyEnabled;
+        set
+        {
+            if (_autoKeyEnabled == value)
+            {
+                return;
+            }
+
+            _autoKeyEnabled = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanSetKey
+    {
+        get => _canSetKey;
+        set
+        {
+            if (_canSetKey == value)
+            {
+                return;
+            }
+
+            _canSetKey = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public ReactiveCommand<Unit, Unit> SetKeyCommand { get; }
 }

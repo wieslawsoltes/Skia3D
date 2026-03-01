@@ -5,14 +5,19 @@ using System.Numerics;
 using Avalonia;
 using Avalonia.Threading;
 using Skia3D.Animation;
+using Skia3D.Audio;
 using Skia3D.Core;
 using Skia3D.Editor;
 using Skia3D.Input;
 using Skia3D.Modeling;
+using Skia3D.Navigation;
+using Skia3D.Physics;
+using Skia3D.Rendering;
 using Skia3D.Runtime;
 using Skia3D.Scene;
 using Skia3D.Sample;
 using Skia3D.Sample.ViewModels;
+using Skia3D.Vfx;
 using SkiaSharp;
 using SceneGraph = Skia3D.Scene.Scene;
 
@@ -25,6 +30,8 @@ public sealed class EditorViewportService : IDisposable
     private static readonly Light DefaultLight = Light.Directional(new Vector3(-0.4f, -1f, -0.6f), new SKColor(255, 255, 255), 1f);
 
     private readonly Renderer3D _renderer;
+    private readonly RenderPipelineSettings _renderSettings;
+    private readonly RenderPipeline _renderPipeline;
     private readonly Camera _camera;
     private readonly OrbitCameraController _orbit;
     private readonly EditorSession _editor;
@@ -33,6 +40,7 @@ public sealed class EditorViewportService : IDisposable
     private readonly DispatcherTimer _timer;
     private readonly AvaloniaInputProvider _inputProvider;
     private readonly ViewportAnimationSystem _animationSystem;
+    private readonly bool _enableSubsystems;
 
     private SkiaView? _surface;
     private IReadOnlyList<MeshInstance> _renderInstances = Array.Empty<MeshInstance>();
@@ -59,6 +67,7 @@ public sealed class EditorViewportService : IDisposable
     private bool _showStats;
     private bool _showUvSeams;
     private bool _showUvIslands;
+    private bool _forceRedraw;
     private bool _uvIslandCacheValid;
     private MeshInstance? _uvIslandInstance;
     private EditableMesh? _uvIslandEditable;
@@ -145,7 +154,8 @@ public sealed class EditorViewportService : IDisposable
         Camera camera,
         OrbitCameraController orbit,
         EditorViewModel editorViewModel,
-        StatusBarViewModel statusBar)
+        StatusBarViewModel statusBar,
+        bool enableSubsystems = false)
     {
         _editor = editor ?? throw new ArgumentNullException(nameof(editor));
         _sceneGraph = sceneGraph ?? throw new ArgumentNullException(nameof(sceneGraph));
@@ -154,8 +164,11 @@ public sealed class EditorViewportService : IDisposable
         _orbit = orbit ?? throw new ArgumentNullException(nameof(orbit));
         _editorViewModel = editorViewModel ?? throw new ArgumentNullException(nameof(editorViewModel));
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
+        _renderSettings = new RenderPipelineSettings();
+        _renderPipeline = new RenderPipeline(new SoftwareRenderBackend(_renderer), _renderSettings);
         _inputProvider = new AvaloniaInputProvider();
         _animationSystem = new ViewportAnimationSystem(this);
+        _enableSubsystems = enableSubsystems;
 
         _timer = new DispatcherTimer
         {
@@ -177,6 +190,8 @@ public sealed class EditorViewportService : IDisposable
         get => _sceneGraph;
         set => SetSceneGraph(value);
     }
+
+    public RenderPipelineSettings RenderSettings => _renderSettings;
 
     private void SetSceneGraph(SceneGraph scene)
     {
@@ -248,9 +263,12 @@ public sealed class EditorViewportService : IDisposable
 
     public event EventHandler? AnimationTimelineChanged;
 
+    public event Action<SceneNode?>? TransformCommitted;
+
     public void Attach(SkiaView surface)
     {
         _surface = surface ?? throw new ArgumentNullException(nameof(surface));
+        _forceRedraw = true;
         _surface.RenderFrame += OnPaintSurface;
         _inputProvider.Attach(_surface);
         _inputProvider.Input += OnInputEvent;
@@ -271,6 +289,7 @@ public sealed class EditorViewportService : IDisposable
 
     public void Invalidate()
     {
+        _forceRedraw = true;
         _surface?.InvalidateVisual();
     }
 
@@ -461,6 +480,12 @@ public sealed class EditorViewportService : IDisposable
             return;
         }
 
+        if (!IsActive && !_forceRedraw)
+        {
+            return;
+        }
+
+        _forceRedraw = false;
         _surface?.InvalidateVisual();
     }
 
@@ -641,6 +666,7 @@ public sealed class EditorViewportService : IDisposable
         {
             _editor.Gizmo.EndDrag();
             _isGizmoDragging = false;
+            TransformCommitted?.Invoke(_selectedNode);
         }
 
         _isDragging = false;
@@ -1005,10 +1031,19 @@ public sealed class EditorViewportService : IDisposable
             ParallelCollect = true,
             ParallelUpdate = true,
             UseSceneLights = true,
-            FallbackLight = DefaultLight
+            FallbackLight = DefaultLight,
+            RenderPipeline = _renderPipeline
         };
 
         host.AddSystem(_animationSystem);
+        if (_enableSubsystems)
+        {
+            var physicsWorld = new PhysicsWorld();
+            host.AddSystem(new ScenePhysicsSystem(_sceneGraph, physicsWorld));
+            host.AddSystem(new NavigationSystem(_sceneGraph));
+            host.AddSystem(new AudioSystem(_sceneGraph));
+            host.AddSystem(new VfxSystem(_sceneGraph, _ => _camera));
+        }
         host.Initialize();
         return host;
     }

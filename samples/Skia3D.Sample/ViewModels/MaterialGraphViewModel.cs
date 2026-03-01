@@ -35,13 +35,48 @@ public sealed class MaterialGraphViewModel : ViewModelBase
     private int _metallicSourceIndex;
     private int _roughnessSourceIndex;
     private int _emissiveSourceIndex;
+    private int _baseColorTextureSourceIndex;
+    private int _metallicRoughnessTextureSourceIndex;
+    private int _normalTextureSourceIndex;
+    private int _emissiveTextureSourceIndex;
+    private int _occlusionTextureSourceIndex;
+    private double _baseColorTextureStrength = 1.0;
+    private double _metallicRoughnessTextureStrength = 1.0;
+    private double _normalStrength = 1.0;
+    private double _emissiveStrength = 1.0;
+    private double _occlusionStrength = 1.0;
+    private TextureSlotOption? _baseColorTextureSlot;
+    private TextureSlotOption? _metallicRoughnessTextureSlot;
+    private TextureSlotOption? _normalTextureSlot;
+    private TextureSlotOption? _emissiveTextureSlot;
+    private TextureSlotOption? _occlusionTextureSlot;
+    private int _shadingModelIndex = 1;
+    private bool _useVertexColor = true;
+    private bool _doubleSided;
+    private double _ambient = 0.15;
+    private double _diffuse = 0.85;
+    private double _specular = 0.2;
+    private double _shininess = 16.0;
+    private double _uvScaleX = 1.0;
+    private double _uvScaleY = 1.0;
+    private double _uvOffsetX;
+    private double _uvOffsetY;
+    private int _previewStamp;
     private bool _isSyncing;
     private bool _isApplying;
+    private readonly ObservableCollection<TextureSlotOption> _textureSlotOptions;
+    private readonly Dictionary<Texture2D, TextureSlotOption> _customTextureOptions = new();
 
     public MaterialGraphViewModel()
     {
         Canvas = new ShaderGraphCanvasViewModel();
         Canvas.GraphChanged += OnGraphChanged;
+        _textureSlotOptions = new ObservableCollection<TextureSlotOption>();
+        _textureSlotOptions.Add(new TextureSlotOption("none", "None", null));
+        foreach (var option in TextureLibrary.Options)
+        {
+            _textureSlotOptions.Add(new TextureSlotOption(option.Id, option.Label, option.Texture));
+        }
         AddColorNodeCommand = new DelegateCommand(AddColorNode, CanEditGraph);
         AddFloatNodeCommand = new DelegateCommand(AddFloatNode, CanEditGraph);
         AddAddNodeCommand = new DelegateCommand(AddAddNode, CanEditGraph);
@@ -52,6 +87,27 @@ public sealed class MaterialGraphViewModel : ViewModelBase
     }
 
     public ShaderGraphCanvasViewModel Canvas { get; }
+
+    public Material? SelectedMaterial => _material;
+
+    public bool HasMaterial => _material != null;
+
+    public int PreviewStamp
+    {
+        get => _previewStamp;
+        private set
+        {
+            if (_previewStamp == value)
+            {
+                return;
+            }
+
+            _previewStamp = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public ObservableCollection<TextureSlotOption> TextureSlotOptions => _textureSlotOptions;
 
     public string SelectionLabel
     {
@@ -76,6 +132,28 @@ public sealed class MaterialGraphViewModel : ViewModelBase
 
     public string EmissiveLabel => $"Emissive: {_emissiveR:0.00} {_emissiveG:0.00} {_emissiveB:0.00}";
 
+    public string BaseColorTextureStrengthLabel => $"Base texture strength: {_baseColorTextureStrength:0.00}";
+
+    public string MetallicRoughnessTextureStrengthLabel => $"Metallic/roughness strength: {_metallicRoughnessTextureStrength:0.00}";
+
+    public string NormalStrengthLabel => $"Normal strength: {_normalStrength:0.00}";
+
+    public string EmissiveStrengthLabel => $"Emissive strength: {_emissiveStrength:0.00}";
+
+    public string OcclusionStrengthLabel => $"Occlusion strength: {_occlusionStrength:0.00}";
+
+    public string AmbientLabel => $"Ambient: {_ambient:0.00}";
+
+    public string DiffuseLabel => $"Diffuse: {_diffuse:0.00}";
+
+    public string SpecularLabel => $"Specular: {_specular:0.00}";
+
+    public string ShininessLabel => $"Shininess: {_shininess:0.00}";
+
+    public string UvScaleLabel => $"UV scale: {_uvScaleX:0.00} {_uvScaleY:0.00}";
+
+    public string UvOffsetLabel => $"UV offset: {_uvOffsetX:0.00} {_uvOffsetY:0.00}";
+
     public IReadOnlyList<ShaderSourceOption> BaseColorSources => s_sources;
 
     public IReadOnlyList<ShaderSourceOption> MetallicSources => s_sources;
@@ -83,6 +161,8 @@ public sealed class MaterialGraphViewModel : ViewModelBase
     public IReadOnlyList<ShaderSourceOption> RoughnessSources => s_sources;
 
     public IReadOnlyList<ShaderSourceOption> EmissiveSources => s_sources;
+
+    public IReadOnlyList<ShaderSourceOption> TextureSources => s_sources;
 
     public double BaseColorR
     {
@@ -156,6 +236,264 @@ public sealed class MaterialGraphViewModel : ViewModelBase
         set => SetSourceIndex(ref _emissiveSourceIndex, value, MaterialOutputNode.EmissiveInput);
     }
 
+    public int BaseColorTextureSourceIndex
+    {
+        get => _baseColorTextureSourceIndex;
+        set
+        {
+            var previous = _baseColorTextureSourceIndex;
+            SetSourceIndex(ref _baseColorTextureSourceIndex, value, MaterialOutputNode.BaseColorTextureInput);
+            if (previous != _baseColorTextureSourceIndex)
+            {
+                RaisePropertyChanged(nameof(IsBaseColorTextureConstant));
+            }
+        }
+    }
+
+    public bool IsBaseColorTextureConstant => BaseColorTextureSourceIndex == 0;
+
+    public int MetallicRoughnessTextureSourceIndex
+    {
+        get => _metallicRoughnessTextureSourceIndex;
+        set
+        {
+            var previous = _metallicRoughnessTextureSourceIndex;
+            SetSourceIndex(ref _metallicRoughnessTextureSourceIndex, value, MaterialOutputNode.MetallicRoughnessTextureInput);
+            if (previous != _metallicRoughnessTextureSourceIndex)
+            {
+                RaisePropertyChanged(nameof(IsMetallicRoughnessTextureConstant));
+            }
+        }
+    }
+
+    public bool IsMetallicRoughnessTextureConstant => MetallicRoughnessTextureSourceIndex == 0;
+
+    public int NormalTextureSourceIndex
+    {
+        get => _normalTextureSourceIndex;
+        set
+        {
+            var previous = _normalTextureSourceIndex;
+            SetSourceIndex(ref _normalTextureSourceIndex, value, MaterialOutputNode.NormalTextureInput);
+            if (previous != _normalTextureSourceIndex)
+            {
+                RaisePropertyChanged(nameof(IsNormalTextureConstant));
+            }
+        }
+    }
+
+    public bool IsNormalTextureConstant => NormalTextureSourceIndex == 0;
+
+    public int EmissiveTextureSourceIndex
+    {
+        get => _emissiveTextureSourceIndex;
+        set
+        {
+            var previous = _emissiveTextureSourceIndex;
+            SetSourceIndex(ref _emissiveTextureSourceIndex, value, MaterialOutputNode.EmissiveTextureInput);
+            if (previous != _emissiveTextureSourceIndex)
+            {
+                RaisePropertyChanged(nameof(IsEmissiveTextureConstant));
+            }
+        }
+    }
+
+    public bool IsEmissiveTextureConstant => EmissiveTextureSourceIndex == 0;
+
+    public int OcclusionTextureSourceIndex
+    {
+        get => _occlusionTextureSourceIndex;
+        set
+        {
+            var previous = _occlusionTextureSourceIndex;
+            SetSourceIndex(ref _occlusionTextureSourceIndex, value, MaterialOutputNode.OcclusionTextureInput);
+            if (previous != _occlusionTextureSourceIndex)
+            {
+                RaisePropertyChanged(nameof(IsOcclusionTextureConstant));
+            }
+        }
+    }
+
+    public bool IsOcclusionTextureConstant => OcclusionTextureSourceIndex == 0;
+
+    public TextureSlotOption? BaseColorTextureSlot
+    {
+        get => _baseColorTextureSlot;
+        set => SetTextureSlot(ref _baseColorTextureSlot, value, MaterialOutputNode.BaseColorTextureInput, GetBaseColorSampler);
+    }
+
+    public TextureSlotOption? MetallicRoughnessTextureSlot
+    {
+        get => _metallicRoughnessTextureSlot;
+        set => SetTextureSlot(ref _metallicRoughnessTextureSlot, value, MaterialOutputNode.MetallicRoughnessTextureInput, GetMetallicRoughnessSampler);
+    }
+
+    public TextureSlotOption? NormalTextureSlot
+    {
+        get => _normalTextureSlot;
+        set => SetTextureSlot(ref _normalTextureSlot, value, MaterialOutputNode.NormalTextureInput, GetNormalSampler);
+    }
+
+    public TextureSlotOption? EmissiveTextureSlot
+    {
+        get => _emissiveTextureSlot;
+        set => SetTextureSlot(ref _emissiveTextureSlot, value, MaterialOutputNode.EmissiveTextureInput, GetEmissiveSampler);
+    }
+
+    public TextureSlotOption? OcclusionTextureSlot
+    {
+        get => _occlusionTextureSlot;
+        set => SetTextureSlot(ref _occlusionTextureSlot, value, MaterialOutputNode.OcclusionTextureInput, GetOcclusionSampler);
+    }
+
+    public double BaseColorTextureStrength
+    {
+        get => _baseColorTextureStrength;
+        set => SetScalar(ref _baseColorTextureStrength, value, UpdateBaseColorTextureStrength, nameof(BaseColorTextureStrengthLabel));
+    }
+
+    public double MetallicRoughnessTextureStrength
+    {
+        get => _metallicRoughnessTextureStrength;
+        set => SetScalar(ref _metallicRoughnessTextureStrength, value, UpdateMetallicRoughnessTextureStrength, nameof(MetallicRoughnessTextureStrengthLabel));
+    }
+
+    public double NormalStrength
+    {
+        get => _normalStrength;
+        set => SetScalarRange(ref _normalStrength, value, 0.0, 4.0, UpdateNormalStrength, nameof(NormalStrengthLabel));
+    }
+
+    public double EmissiveStrength
+    {
+        get => _emissiveStrength;
+        set => SetScalar(ref _emissiveStrength, value, UpdateEmissiveStrength, nameof(EmissiveStrengthLabel));
+    }
+
+    public double OcclusionStrength
+    {
+        get => _occlusionStrength;
+        set => SetScalar(ref _occlusionStrength, value, UpdateOcclusionStrength, nameof(OcclusionStrengthLabel));
+    }
+
+    public int ShadingModelIndex
+    {
+        get => _shadingModelIndex;
+        set
+        {
+            var clamped = Math.Clamp(value, 0, 1);
+            if (_shadingModelIndex == clamped)
+            {
+                return;
+            }
+
+            _shadingModelIndex = clamped;
+            RaisePropertyChanged();
+            RaisePropertyChanged(nameof(IsPhongModel));
+            RaisePropertyChanged(nameof(IsPbrModel));
+            if (_isSyncing || _material == null)
+            {
+                return;
+            }
+
+            _material.ShadingModel = _shadingModelIndex == 0 ? MaterialShadingModel.Phong : MaterialShadingModel.MetallicRoughness;
+        }
+    }
+
+    public bool IsPhongModel => ShadingModelIndex == 0;
+
+    public bool IsPbrModel => ShadingModelIndex == 1;
+
+    public bool UseVertexColor
+    {
+        get => _useVertexColor;
+        set
+        {
+            if (_useVertexColor == value)
+            {
+                return;
+            }
+
+            _useVertexColor = value;
+            RaisePropertyChanged();
+            if (_isSyncing || _material == null)
+            {
+                return;
+            }
+
+            _material.UseVertexColor = value;
+        }
+    }
+
+    public bool DoubleSided
+    {
+        get => _doubleSided;
+        set
+        {
+            if (_doubleSided == value)
+            {
+                return;
+            }
+
+            _doubleSided = value;
+            RaisePropertyChanged();
+            if (_isSyncing || _material == null)
+            {
+                return;
+            }
+
+            _material.DoubleSided = value;
+        }
+    }
+
+    public double Ambient
+    {
+        get => _ambient;
+        set => SetMaterialScalar(ref _ambient, value, 0.0, 1.0, updated => _material!.Ambient = (float)updated, nameof(AmbientLabel));
+    }
+
+    public double Diffuse
+    {
+        get => _diffuse;
+        set => SetMaterialScalar(ref _diffuse, value, 0.0, 1.0, updated => _material!.Diffuse = (float)updated, nameof(DiffuseLabel));
+    }
+
+    public double Specular
+    {
+        get => _specular;
+        set => SetMaterialScalar(ref _specular, value, 0.0, 1.0, updated => _material!.Specular = (float)updated, nameof(SpecularLabel));
+    }
+
+    public double Shininess
+    {
+        get => _shininess;
+        set => SetMaterialScalar(ref _shininess, value, 1.0, 128.0, updated => _material!.Shininess = (float)updated, nameof(ShininessLabel));
+    }
+
+    public double UvScaleX
+    {
+        get => _uvScaleX;
+        set => SetUvScale(ref _uvScaleX, value);
+    }
+
+    public double UvScaleY
+    {
+        get => _uvScaleY;
+        set => SetUvScale(ref _uvScaleY, value);
+    }
+
+    public double UvOffsetX
+    {
+        get => _uvOffsetX;
+        set => SetUvOffset(ref _uvOffsetX, value);
+    }
+
+    public double UvOffsetY
+    {
+        get => _uvOffsetY;
+        set => SetUvOffset(ref _uvOffsetY, value);
+    }
+
     public DelegateCommand AddColorNodeCommand { get; }
 
     public DelegateCommand AddFloatNodeCommand { get; }
@@ -176,9 +514,13 @@ public sealed class MaterialGraphViewModel : ViewModelBase
         _graph = graph;
         SelectionLabel = label;
         Canvas.SetGraph(graph);
+        ResetCustomTextureOptions();
+        SyncFromMaterial();
         SyncFromGraph();
         ApplyGraphToMaterial();
         UpdateCommandState();
+        RaisePropertyChanged(nameof(SelectedMaterial));
+        RaisePropertyChanged(nameof(HasMaterial));
     }
 
     private void UpdateCommandState()
@@ -278,6 +620,63 @@ public sealed class MaterialGraphViewModel : ViewModelBase
         ApplyGraphToMaterial();
     }
 
+    private void SyncFromMaterial()
+    {
+        _isSyncing = true;
+        try
+        {
+            if (_material == null)
+            {
+                ShadingModelIndex = 1;
+                UseVertexColor = true;
+                DoubleSided = false;
+                Ambient = 0.15;
+                Diffuse = 0.85;
+                Specular = 0.2;
+                Shininess = 16.0;
+                UvScaleX = 1.0;
+                UvScaleY = 1.0;
+                UvOffsetX = 0.0;
+                UvOffsetY = 0.0;
+                return;
+            }
+
+            ShadingModelIndex = _material.ShadingModel == MaterialShadingModel.Phong ? 0 : 1;
+            UseVertexColor = _material.UseVertexColor;
+            DoubleSided = _material.DoubleSided;
+            Ambient = _material.Ambient;
+            Diffuse = _material.Diffuse;
+            Specular = _material.Specular;
+            Shininess = _material.Shininess;
+            UvScaleX = _material.UvScale.X;
+            UvScaleY = _material.UvScale.Y;
+            UvOffsetX = _material.UvOffset.X;
+            UvOffsetY = _material.UvOffset.Y;
+        }
+        finally
+        {
+            _isSyncing = false;
+        }
+    }
+
+    private void ResetCustomTextureOptions()
+    {
+        if (_customTextureOptions.Count == 0)
+        {
+            return;
+        }
+
+        for (int i = _textureSlotOptions.Count - 1; i >= 0; i--)
+        {
+            if (_textureSlotOptions[i].IsCustom)
+            {
+                _textureSlotOptions.RemoveAt(i);
+            }
+        }
+
+        _customTextureOptions.Clear();
+    }
+
     private void SyncFromGraph()
     {
         _isSyncing = true;
@@ -297,6 +696,21 @@ public sealed class MaterialGraphViewModel : ViewModelBase
                 MetallicSourceIndex = 0;
                 RoughnessSourceIndex = 0;
                 EmissiveSourceIndex = 0;
+                BaseColorTextureSourceIndex = 0;
+                MetallicRoughnessTextureSourceIndex = 0;
+                NormalTextureSourceIndex = 0;
+                EmissiveTextureSourceIndex = 0;
+                OcclusionTextureSourceIndex = 0;
+                BaseColorTextureStrength = 1.0;
+                MetallicRoughnessTextureStrength = 1.0;
+                NormalStrength = 1.0;
+                EmissiveStrength = 1.0;
+                OcclusionStrength = 1.0;
+                BaseColorTextureSlot = TextureSlotOptions[0];
+                MetallicRoughnessTextureSlot = TextureSlotOptions[0];
+                NormalTextureSlot = TextureSlotOptions[0];
+                EmissiveTextureSlot = TextureSlotOptions[0];
+                OcclusionTextureSlot = TextureSlotOptions[0];
                 return;
             }
 
@@ -313,6 +727,16 @@ public sealed class MaterialGraphViewModel : ViewModelBase
             EmissiveR = emissive.X;
             EmissiveG = emissive.Y;
             EmissiveB = emissive.Z;
+            BaseColorTextureStrength = output.FindInput(MaterialOutputNode.BaseColorTextureStrengthInput)?.DefaultValue.AsFloat(1f) ?? 1f;
+            MetallicRoughnessTextureStrength = output.FindInput(MaterialOutputNode.MetallicRoughnessStrengthInput)?.DefaultValue.AsFloat(1f) ?? 1f;
+            NormalStrength = output.FindInput(MaterialOutputNode.NormalStrengthInput)?.DefaultValue.AsFloat(1f) ?? 1f;
+            EmissiveStrength = output.FindInput(MaterialOutputNode.EmissiveStrengthInput)?.DefaultValue.AsFloat(1f) ?? 1f;
+            OcclusionStrength = output.FindInput(MaterialOutputNode.OcclusionStrengthInput)?.DefaultValue.AsFloat(1f) ?? 1f;
+            BaseColorTextureSlot = ResolveTextureSlot(output.FindInput(MaterialOutputNode.BaseColorTextureInput)?.DefaultValue.AsTexture());
+            MetallicRoughnessTextureSlot = ResolveTextureSlot(output.FindInput(MaterialOutputNode.MetallicRoughnessTextureInput)?.DefaultValue.AsTexture());
+            NormalTextureSlot = ResolveTextureSlot(output.FindInput(MaterialOutputNode.NormalTextureInput)?.DefaultValue.AsTexture());
+            EmissiveTextureSlot = ResolveTextureSlot(output.FindInput(MaterialOutputNode.EmissiveTextureInput)?.DefaultValue.AsTexture());
+            OcclusionTextureSlot = ResolveTextureSlot(output.FindInput(MaterialOutputNode.OcclusionTextureInput)?.DefaultValue.AsTexture());
             SyncSourceIndices();
         }
         finally
@@ -335,6 +759,11 @@ public sealed class MaterialGraphViewModel : ViewModelBase
             MetallicSourceIndex = GetSourceIndex(MaterialOutputNode.MetallicInput);
             RoughnessSourceIndex = GetSourceIndex(MaterialOutputNode.RoughnessInput);
             EmissiveSourceIndex = GetSourceIndex(MaterialOutputNode.EmissiveInput);
+            BaseColorTextureSourceIndex = GetSourceIndex(MaterialOutputNode.BaseColorTextureInput);
+            MetallicRoughnessTextureSourceIndex = GetSourceIndex(MaterialOutputNode.MetallicRoughnessTextureInput);
+            NormalTextureSourceIndex = GetSourceIndex(MaterialOutputNode.NormalTextureInput);
+            EmissiveTextureSourceIndex = GetSourceIndex(MaterialOutputNode.EmissiveTextureInput);
+            OcclusionTextureSourceIndex = GetSourceIndex(MaterialOutputNode.OcclusionTextureInput);
         }
         finally
         {
@@ -391,6 +820,138 @@ public sealed class MaterialGraphViewModel : ViewModelBase
 
         apply();
     }
+
+    private void SetScalarRange(ref double field, double value, double min, double max, Action apply, string labelProperty)
+    {
+        var clamped = Math.Clamp(value, min, max);
+        if (Math.Abs(field - clamped) < 1e-6)
+        {
+            return;
+        }
+
+        field = clamped;
+        RaisePropertyChanged();
+        RaisePropertyChanged(labelProperty);
+        if (_isSyncing)
+        {
+            return;
+        }
+
+        apply();
+    }
+
+    private void SetMaterialScalar(ref double field, double value, double min, double max, Action<double> apply, string labelProperty)
+    {
+        var clamped = Math.Clamp(value, min, max);
+        if (Math.Abs(field - clamped) < 1e-6)
+        {
+            return;
+        }
+
+        field = clamped;
+        RaisePropertyChanged();
+        RaisePropertyChanged(labelProperty);
+        if (_isSyncing || _material == null)
+        {
+            return;
+        }
+
+        apply(clamped);
+    }
+
+    private void SetUvScale(ref double field, double value)
+    {
+        var clamped = Math.Clamp(value, 0.01, 10.0);
+        if (Math.Abs(field - clamped) < 1e-6)
+        {
+            return;
+        }
+
+        field = clamped;
+        RaisePropertyChanged();
+        RaisePropertyChanged(nameof(UvScaleLabel));
+        if (_isSyncing || _material == null)
+        {
+            return;
+        }
+
+        _material.UvScale = new Vector2((float)_uvScaleX, (float)_uvScaleY);
+    }
+
+    private void SetUvOffset(ref double field, double value)
+    {
+        var clamped = Math.Clamp(value, -5.0, 5.0);
+        if (Math.Abs(field - clamped) < 1e-6)
+        {
+            return;
+        }
+
+        field = clamped;
+        RaisePropertyChanged();
+        RaisePropertyChanged(nameof(UvOffsetLabel));
+        if (_isSyncing || _material == null)
+        {
+            return;
+        }
+
+        _material.UvOffset = new Vector2((float)_uvOffsetX, (float)_uvOffsetY);
+    }
+
+    private void SetTextureSlot(ref TextureSlotOption? field, TextureSlotOption? value, string inputName, Func<TextureSampler> samplerProvider)
+    {
+        if (ReferenceEquals(field, value))
+        {
+            return;
+        }
+
+        field = value;
+        RaisePropertyChanged();
+        if (_isSyncing || _graph == null)
+        {
+            return;
+        }
+
+        var sampler = samplerProvider();
+        _graph.OutputNode.TrySetInputDefault(inputName, ShaderValue.TextureValue(value?.Texture, sampler));
+        ApplyGraphToMaterial();
+    }
+
+    private TextureSlotOption ResolveTextureSlot(Texture2D? texture)
+    {
+        if (texture == null)
+        {
+            return _textureSlotOptions[0];
+        }
+
+        for (int i = 0; i < _textureSlotOptions.Count; i++)
+        {
+            if (ReferenceEquals(_textureSlotOptions[i].Texture, texture))
+            {
+                return _textureSlotOptions[i];
+            }
+        }
+
+        if (_customTextureOptions.TryGetValue(texture, out var existing))
+        {
+            return existing;
+        }
+
+        var index = _customTextureOptions.Count + 1;
+        var custom = new TextureSlotOption($"custom-{index}", $"Custom {index}", texture, isCustom: true);
+        _customTextureOptions[texture] = custom;
+        _textureSlotOptions.Add(custom);
+        return custom;
+    }
+
+    private TextureSampler GetBaseColorSampler() => _material?.BaseColorSampler ?? new TextureSampler();
+
+    private TextureSampler GetMetallicRoughnessSampler() => _material?.MetallicRoughnessSampler ?? new TextureSampler();
+
+    private TextureSampler GetNormalSampler() => _material?.NormalSampler ?? new TextureSampler();
+
+    private TextureSampler GetEmissiveSampler() => _material?.EmissiveSampler ?? new TextureSampler();
+
+    private TextureSampler GetOcclusionSampler() => _material?.OcclusionSampler ?? new TextureSampler();
 
     private void SetSourceIndex(ref int field, int value, string inputName)
     {
@@ -461,6 +1022,66 @@ public sealed class MaterialGraphViewModel : ViewModelBase
         ApplyGraphToMaterial();
     }
 
+    private void UpdateBaseColorTextureStrength()
+    {
+        if (_graph == null)
+        {
+            return;
+        }
+
+        _graph.OutputNode.TrySetInputDefault(MaterialOutputNode.BaseColorTextureStrengthInput, ShaderValue.Float((float)_baseColorTextureStrength));
+        ApplyGraphToMaterial();
+    }
+
+    private void UpdateMetallicRoughnessTextureStrength()
+    {
+        if (_graph == null)
+        {
+            return;
+        }
+
+        _graph.OutputNode.TrySetInputDefault(MaterialOutputNode.MetallicRoughnessStrengthInput, ShaderValue.Float((float)_metallicRoughnessTextureStrength));
+        ApplyGraphToMaterial();
+    }
+
+    private void UpdateNormalStrength()
+    {
+        if (_graph == null)
+        {
+            return;
+        }
+
+        _graph.OutputNode.TrySetInputDefault(MaterialOutputNode.NormalStrengthInput, ShaderValue.Float((float)_normalStrength));
+        ApplyGraphToMaterial();
+    }
+
+    private void UpdateEmissiveStrength()
+    {
+        if (_graph == null)
+        {
+            return;
+        }
+
+        _graph.OutputNode.TrySetInputDefault(MaterialOutputNode.EmissiveStrengthInput, ShaderValue.Float((float)_emissiveStrength));
+        ApplyGraphToMaterial();
+    }
+
+    private void UpdateOcclusionStrength()
+    {
+        if (_graph == null)
+        {
+            return;
+        }
+
+        _graph.OutputNode.TrySetInputDefault(MaterialOutputNode.OcclusionStrengthInput, ShaderValue.Float((float)_occlusionStrength));
+        ApplyGraphToMaterial();
+    }
+
+    private void BumpPreviewStamp()
+    {
+        PreviewStamp = _previewStamp + 1;
+    }
+
     private void ApplyGraphToMaterial()
     {
         if (_isApplying || _material == null || _graph == null)
@@ -482,6 +1103,14 @@ public sealed class MaterialGraphViewModel : ViewModelBase
                 _material.BaseColorSampler = result.BaseColorSampler;
             }
 
+            _material.BaseColorTextureStrength = result.BaseColorTextureStrength;
+            _material.MetallicRoughnessTexture = result.MetallicRoughnessTexture;
+            if (result.MetallicRoughnessSampler != null)
+            {
+                _material.MetallicRoughnessSampler = result.MetallicRoughnessSampler;
+            }
+
+            _material.MetallicRoughnessTextureStrength = result.MetallicRoughnessStrength;
             _material.NormalTexture = result.NormalTexture;
             if (result.NormalSampler != null)
             {
@@ -489,6 +1118,21 @@ public sealed class MaterialGraphViewModel : ViewModelBase
             }
 
             _material.NormalStrength = result.NormalStrength;
+            _material.EmissiveTexture = result.EmissiveTexture;
+            if (result.EmissiveSampler != null)
+            {
+                _material.EmissiveSampler = result.EmissiveSampler;
+            }
+
+            _material.EmissiveStrength = result.EmissiveStrength;
+            _material.OcclusionTexture = result.OcclusionTexture;
+            if (result.OcclusionSampler != null)
+            {
+                _material.OcclusionSampler = result.OcclusionSampler;
+            }
+
+            _material.OcclusionStrength = result.OcclusionStrength;
+            BumpPreviewStamp();
         }
         finally
         {
@@ -1238,6 +1882,25 @@ public enum ShaderSourceMode
     Graph
 }
 
+public sealed class TextureSlotOption
+{
+    public TextureSlotOption(string id, string label, Texture2D? texture, bool isCustom = false)
+    {
+        Id = id;
+        Label = label;
+        Texture = texture;
+        IsCustom = isCustom;
+    }
+
+    public string Id { get; }
+
+    public string Label { get; }
+
+    public Texture2D? Texture { get; }
+
+    public bool IsCustom { get; }
+}
+
 public sealed class TextureOption
 {
     public TextureOption(string id, string label, Texture2D texture)
@@ -1259,7 +1922,11 @@ public static class TextureLibrary
     private static readonly IReadOnlyList<TextureOption> s_options = new[]
     {
         new TextureOption("checker", "Checkerboard", Texture2D.CreateCheckerboard(128, 128, new SKColor(54, 58, 64), new SKColor(28, 32, 40))),
-        new TextureOption("flat-normal", "Flat Normal", CreateSolidTexture(128, 128, new SKColor(128, 128, 255)))
+        new TextureOption("flat-normal", "Flat Normal", CreateSolidTexture(128, 128, new SKColor(128, 128, 255))),
+        new TextureOption("neutral-gray", "Neutral Gray", CreateSolidTexture(128, 128, new SKColor(128, 128, 128))),
+        new TextureOption("white", "White", CreateSolidTexture(128, 128, new SKColor(235, 235, 235))),
+        new TextureOption("black", "Black", CreateSolidTexture(128, 128, new SKColor(20, 20, 20))),
+        new TextureOption("noise", "Noise", CreateNoiseTexture(128, 128, 1337))
     };
 
     public static IReadOnlyList<TextureOption> Options => s_options;
@@ -1275,6 +1942,22 @@ public static class TextureLibrary
     {
         var bitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
         bitmap.Erase(color);
+        return new Texture2D(bitmap);
+    }
+
+    private static Texture2D CreateNoiseTexture(int width, int height, int seed)
+    {
+        var bitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+        var rng = new Random(seed);
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                var value = (byte)rng.Next(40, 220);
+                bitmap.SetPixel(x, y, new SKColor(value, value, value, 255));
+            }
+        }
+
         return new Texture2D(bitmap);
     }
 }

@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:Skia3D.Sample.Controls"
+             xmlns:primitives="clr-namespace:Avalonia.Controls.Primitives;assembly=Avalonia.Controls"
+             xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
+             x:Class="Skia3D.Sample.Controls.ViewportDockControl"
+             x:DataType="vm:ViewportDockContext">
+    <Grid>
+        <Grid RowDefinitions="*,*" ColumnDefinitions="*,*" RowSpacing="6" ColumnSpacing="6">
+            <Border Grid.Row="0" Grid.Column="0" Classes="MaxPanel">
+                <controls:EditorViewportControl x:Name="ViewportPerspective"/>
+            </Border>
+            <Border Grid.Row="0" Grid.Column="1" Classes="MaxPanel">
+                <controls:EditorViewportControl x:Name="ViewportTop"/>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="0" Classes="MaxPanel">
+                <controls:EditorViewportControl x:Name="ViewportFront"/>
+            </Border>
+            <Border Grid.Row="1" Grid.Column="1" Classes="MaxPanel">
+                <controls:EditorViewportControl x:Name="ViewportLeft"/>
+            </Border>
+        </Grid>
+
+        <primitives:Popup x:Name="QuadMenuPopup"
+                          IsOpen="{Binding Actions.IsQuadMenuOpen, Mode=TwoWay}"
+                          Placement="Pointer"
+                          PlacementAnchor="TopLeft"
+                          HorizontalOffset="8"
+                          VerticalOffset="8">
+            <controls:QuadMenuControl DataContext="{Binding}"/>
+        </primitives:Popup>
+    </Grid>
+</UserControl>

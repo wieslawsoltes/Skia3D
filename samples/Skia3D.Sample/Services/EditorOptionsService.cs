@@ -4,6 +4,7 @@ using Skia3D.Core;
 using Skia3D.Editor;
 using Skia3D.IO;
 using Skia3D.Modeling;
+using Skia3D.Rendering;
 using Skia3D.Sample.ViewModels;
 
 namespace Skia3D.Sample.Services;
@@ -49,9 +50,85 @@ public sealed class EditorOptionsService : IDisposable
     {
         _renderer.UseDepthBuffer = _optionsViewModel.DepthEnabled;
         _renderer.EnableLighting = _optionsViewModel.LightingEnabled;
+        _renderer.EnableImageBasedLighting = _optionsViewModel.ImageBasedLightingEnabled;
+        _renderer.EnableBackfaceCulling = _optionsViewModel.BackfaceCullingEnabled;
         _renderer.ShowWireframe = _optionsViewModel.WireframeEnabled;
         _renderer.EnableShadows = _optionsViewModel.ShadowEnabled;
         _renderer.EnableSsao = _optionsViewModel.SsaoEnabled;
+        var renderScale = (float)Math.Clamp(_optionsViewModel.RenderScale, 0.25, 1.0);
+        _renderer.DepthRenderScale = renderScale;
+        _optionsViewModel.RenderScale = renderScale;
+        var maxWorkers = Math.Max(1, Environment.ProcessorCount);
+        var workerCount = Math.Clamp(_optionsViewModel.RenderWorkerCount, 1, maxWorkers);
+        _renderer.MaxWorkerCount = workerCount;
+        _optionsViewModel.RenderWorkerCount = workerCount;
+        var environmentIntensity = (float)Math.Clamp(_optionsViewModel.EnvironmentIntensity, 0.0, 2.0);
+        _renderer.EnvironmentIntensity = environmentIntensity;
+        _optionsViewModel.EnvironmentIntensity = environmentIntensity;
+        var shadowMapSize = Math.Clamp(_optionsViewModel.ShadowMapSize, 64, 4096);
+        _renderer.ShadowMapSize = shadowMapSize;
+        _optionsViewModel.ShadowMapSize = shadowMapSize;
+
+        var shadowBias = (float)Math.Clamp(_optionsViewModel.ShadowBias, 0.0, 0.02);
+        _renderer.ShadowBias = shadowBias;
+        _optionsViewModel.ShadowBias = shadowBias;
+
+        var shadowNormalBias = (float)Math.Clamp(_optionsViewModel.ShadowNormalBias, 0.0, 0.02);
+        _renderer.ShadowNormalBias = shadowNormalBias;
+        _optionsViewModel.ShadowNormalBias = shadowNormalBias;
+
+        var shadowStrength = (float)Math.Clamp(_optionsViewModel.ShadowStrength, 0.0, 1.0);
+        _renderer.ShadowStrength = shadowStrength;
+        _optionsViewModel.ShadowStrength = shadowStrength;
+
+        var shadowPcfRadius = Math.Clamp(_optionsViewModel.ShadowPcfRadius, 0, 6);
+        _renderer.ShadowPcfRadius = shadowPcfRadius;
+        _optionsViewModel.ShadowPcfRadius = shadowPcfRadius;
+
+        var ssaoRadius = (float)Math.Clamp(_optionsViewModel.SsaoRadius, 1.0, 64.0);
+        _renderer.SsaoRadius = ssaoRadius;
+        _optionsViewModel.SsaoRadius = ssaoRadius;
+
+        var ssaoIntensity = (float)Math.Clamp(_optionsViewModel.SsaoIntensity, 0.0, 1.0);
+        _renderer.SsaoIntensity = ssaoIntensity;
+        _optionsViewModel.SsaoIntensity = ssaoIntensity;
+
+        var ssaoDepthBias = (float)Math.Clamp(_optionsViewModel.SsaoDepthBias, 0.0, 0.1);
+        _renderer.SsaoDepthBias = ssaoDepthBias;
+        _optionsViewModel.SsaoDepthBias = ssaoDepthBias;
+
+        var ssaoSamples = Math.Clamp(_optionsViewModel.SsaoSampleCount, 1, 32);
+        _renderer.SsaoSampleCount = ssaoSamples;
+        _optionsViewModel.SsaoSampleCount = ssaoSamples;
+
+        var toneIndex = ClampIndex(_optionsViewModel.ToneMappingIndex, 0, 2, value => _optionsViewModel.ToneMappingIndex = value);
+        var toneMapping = toneIndex switch
+        {
+            2 => ToneMappingMode.Aces,
+            1 => ToneMappingMode.Reinhard,
+            _ => ToneMappingMode.None
+        };
+
+        var exposure = (float)Math.Clamp(_optionsViewModel.PostExposure, 0.0, 4.0);
+        _optionsViewModel.PostExposure = exposure;
+
+        var bloomThreshold = (float)Math.Clamp(_optionsViewModel.BloomThreshold, 0.0, 1.0);
+        _optionsViewModel.BloomThreshold = bloomThreshold;
+
+        var bloomIntensity = (float)Math.Clamp(_optionsViewModel.BloomIntensity, 0.0, 2.0);
+        _optionsViewModel.BloomIntensity = bloomIntensity;
+
+        var bloomRadius = Math.Clamp(_optionsViewModel.BloomRadius, 0, 16);
+        _optionsViewModel.BloomRadius = bloomRadius;
+
+        var fxaaEdge = (float)Math.Clamp(_optionsViewModel.FxaaEdgeThreshold, 0.0, 1.0);
+        _optionsViewModel.FxaaEdgeThreshold = fxaaEdge;
+
+        var fxaaEdgeMin = (float)Math.Clamp(_optionsViewModel.FxaaEdgeThresholdMin, 0.0, 1.0);
+        _optionsViewModel.FxaaEdgeThresholdMin = fxaaEdgeMin;
+
+        var fxaaBlend = (float)Math.Clamp(_optionsViewModel.FxaaSubpixelBlend, 0.0, 1.0);
+        _optionsViewModel.FxaaSubpixelBlend = fxaaBlend;
 
         for (int i = 0; i < _viewportManager.Viewports.Count; i++)
         {
@@ -62,6 +139,21 @@ public sealed class EditorOptionsService : IDisposable
             viewport.ShowStats = _optionsViewModel.ShowStats;
             viewport.ShowUvSeams = _optionsViewModel.UvShowSeams;
             viewport.ShowUvIslands = _optionsViewModel.UvShowIslands;
+            viewport.RenderSettings.EnableDepthPass = _optionsViewModel.DepthEnabled;
+            viewport.RenderSettings.EnableShadowPass = _optionsViewModel.ShadowEnabled;
+            viewport.RenderSettings.EnableMainPass = true;
+            var post = viewport.RenderSettings.PostProcess;
+            post.Enabled = _optionsViewModel.PostProcessingEnabled;
+            post.ToneMapping = toneMapping;
+            post.Exposure = exposure;
+            post.Bloom.Enabled = _optionsViewModel.BloomEnabled;
+            post.Bloom.Threshold = bloomThreshold;
+            post.Bloom.Intensity = bloomIntensity;
+            post.Bloom.Radius = bloomRadius;
+            post.Fxaa.Enabled = _optionsViewModel.FxaaEnabled;
+            post.Fxaa.EdgeThreshold = fxaaEdge;
+            post.Fxaa.EdgeThresholdMin = fxaaEdgeMin;
+            post.Fxaa.SubpixelBlend = fxaaBlend;
         }
 
         _editor.Gizmo.ShowGizmo = _optionsViewModel.GizmoVisible;
@@ -205,6 +297,30 @@ public sealed class EditorOptionsService : IDisposable
         var proportionalRadius = (float)Math.Clamp(_optionsViewModel.ProportionalRadius, 0.1, 50.0);
         options.ProportionalRadius = proportionalRadius;
         _optionsViewModel.ProportionalRadius = proportionalRadius;
+
+        var extrudeDistance = (float)Math.Clamp(_optionsViewModel.ExtrudeDistance, 0.01, 10.0);
+        _editor.MeshEdits.ExtrudeDistance = extrudeDistance;
+        _optionsViewModel.ExtrudeDistance = extrudeDistance;
+
+        var bevelInset = (float)Math.Clamp(_optionsViewModel.BevelInset, 0.0, 5.0);
+        _editor.MeshEdits.BevelInset = bevelInset;
+        _optionsViewModel.BevelInset = bevelInset;
+
+        var bevelHeight = (float)Math.Clamp(_optionsViewModel.BevelHeight, 0.0, 5.0);
+        _editor.MeshEdits.BevelHeight = bevelHeight;
+        _optionsViewModel.BevelHeight = bevelHeight;
+
+        var insetDistance = (float)Math.Clamp(_optionsViewModel.InsetDistance, 0.0, 5.0);
+        _editor.MeshEdits.InsetDistance = insetDistance;
+        _optionsViewModel.InsetDistance = insetDistance;
+
+        var weldTolerance = (float)Math.Clamp(_optionsViewModel.WeldTolerance, 0.0001, 1.0);
+        _editor.MeshEdits.WeldTolerance = weldTolerance;
+        _optionsViewModel.WeldTolerance = weldTolerance;
+
+        var nudgeStep = (float)Math.Clamp(_optionsViewModel.NudgeStep, 0.01, 5.0);
+        _editor.MeshEdits.NudgeStep = nudgeStep;
+        _optionsViewModel.NudgeStep = nudgeStep;
     }
 
     public void ApplyEditOptions()
@@ -384,9 +500,34 @@ public sealed class EditorOptionsService : IDisposable
                 break;
             case nameof(InspectorOptionsViewModel.DepthEnabled):
             case nameof(InspectorOptionsViewModel.LightingEnabled):
+            case nameof(InspectorOptionsViewModel.ImageBasedLightingEnabled):
+            case nameof(InspectorOptionsViewModel.BackfaceCullingEnabled):
+            case nameof(InspectorOptionsViewModel.EnvironmentIntensity):
             case nameof(InspectorOptionsViewModel.WireframeEnabled):
             case nameof(InspectorOptionsViewModel.ShadowEnabled):
             case nameof(InspectorOptionsViewModel.SsaoEnabled):
+            case nameof(InspectorOptionsViewModel.RenderScale):
+            case nameof(InspectorOptionsViewModel.RenderWorkerCount):
+            case nameof(InspectorOptionsViewModel.ShadowMapSize):
+            case nameof(InspectorOptionsViewModel.ShadowBias):
+            case nameof(InspectorOptionsViewModel.ShadowNormalBias):
+            case nameof(InspectorOptionsViewModel.ShadowStrength):
+            case nameof(InspectorOptionsViewModel.ShadowPcfRadius):
+            case nameof(InspectorOptionsViewModel.SsaoRadius):
+            case nameof(InspectorOptionsViewModel.SsaoIntensity):
+            case nameof(InspectorOptionsViewModel.SsaoDepthBias):
+            case nameof(InspectorOptionsViewModel.SsaoSampleCount):
+            case nameof(InspectorOptionsViewModel.PostProcessingEnabled):
+            case nameof(InspectorOptionsViewModel.ToneMappingIndex):
+            case nameof(InspectorOptionsViewModel.PostExposure):
+            case nameof(InspectorOptionsViewModel.BloomEnabled):
+            case nameof(InspectorOptionsViewModel.BloomThreshold):
+            case nameof(InspectorOptionsViewModel.BloomIntensity):
+            case nameof(InspectorOptionsViewModel.BloomRadius):
+            case nameof(InspectorOptionsViewModel.FxaaEnabled):
+            case nameof(InspectorOptionsViewModel.FxaaEdgeThreshold):
+            case nameof(InspectorOptionsViewModel.FxaaEdgeThresholdMin):
+            case nameof(InspectorOptionsViewModel.FxaaSubpixelBlend):
             case nameof(InspectorOptionsViewModel.GridEnabled):
             case nameof(InspectorOptionsViewModel.PauseEnabled):
             case nameof(InspectorOptionsViewModel.PickDebugEnabled):
@@ -437,6 +578,12 @@ public sealed class EditorOptionsService : IDisposable
             case nameof(InspectorOptionsViewModel.ProportionalEnabled):
             case nameof(InspectorOptionsViewModel.ProportionalFalloffIndex):
             case nameof(InspectorOptionsViewModel.ProportionalRadius):
+            case nameof(InspectorOptionsViewModel.ExtrudeDistance):
+            case nameof(InspectorOptionsViewModel.BevelInset):
+            case nameof(InspectorOptionsViewModel.BevelHeight):
+            case nameof(InspectorOptionsViewModel.InsetDistance):
+            case nameof(InspectorOptionsViewModel.WeldTolerance):
+            case nameof(InspectorOptionsViewModel.NudgeStep):
                 ApplyWithGuard(ApplyModelingOptions);
                 break;
             case nameof(InspectorOptionsViewModel.ImportCenter):

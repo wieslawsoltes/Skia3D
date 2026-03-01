@@ -7,122 +7,573 @@
         <StackPanel Spacing="6">
             <Border Classes="MaxRibbonTabs">
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="True">Modeling</RadioButton>
-                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs">Freeform</RadioButton>
-                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs">Selection</RadioButton>
-                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs">Object Paint</RadioButton>
-                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsEnabled="False">Populate</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="{Binding IsModelingTab, Mode=TwoWay}">Modeling</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="{Binding IsFreeformTab, Mode=TwoWay}">Freeform</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="{Binding IsSelectionTab, Mode=TwoWay}">Selection</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="{Binding IsObjectPaintTab, Mode=TwoWay}">Object Paint</RadioButton>
+                    <RadioButton Classes="MaxRibbonTab" GroupName="RibbonTabs" IsChecked="{Binding IsPopulateTab, Mode=TwoWay}">Populate</RadioButton>
                 </StackPanel>
             </Border>
             <WrapPanel Orientation="Horizontal">
-                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Button Classes="MaxRibbonButton" IsEnabled="False">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Create Flow" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" IsEnabled="False">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Create Idle Area" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                        <TextBlock Text="Populate" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
-                    </StackPanel>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowFileGroup}">
+                    <Button Classes="MaxRibbonButton" Content="File">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Open Scene..." Command="{Binding Actions.OpenSceneCommand}"/>
+                                <MenuItem Header="Save Scene" Command="{Binding Actions.SaveSceneCommand}"/>
+                                <MenuItem Header="Save Scene As..." Command="{Binding Actions.SaveSceneAsCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Import Mesh..." Command="{Binding Actions.LoadObjCommand}"/>
+                                <MenuItem Header="Zoom Extents" Command="{Binding Actions.ZoomExtentsCommand}"/>
+                                <MenuItem Header="Clear Scene" Command="{Binding Actions.ClearSceneCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </Border>
-
-                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.ExtrudeFacesCommand}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Extrude" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.BevelFacesCommand}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Bevel" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.InsetFacesCommand}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Inset" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.LoopCutEdgeLoopCommand}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Loop Cut" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                        <TextBlock Text="Modeling" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
-                    </StackPanel>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowEditGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Edit">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Undo" Command="{Binding Actions.UndoCommand}" IsEnabled="{Binding Editor.CanUndo}"/>
+                                <MenuItem Header="Redo" Command="{Binding Actions.RedoCommand}" IsEnabled="{Binding Editor.CanRedo}"/>
+                                <Separator/>
+                                <MenuItem Header="Select All" Command="{Binding Actions.SelectAllCommand}"/>
+                                <MenuItem Header="Invert Selection" Command="{Binding Actions.InvertSelectionCommand}"/>
+                                <MenuItem Header="Clear Selection" Command="{Binding Actions.ClearSelectionCommand}"/>
+                                <MenuItem Header="Selection Ops">
+                                    <MenuItem Header="Grow Selection"
+                                              Command="{Binding Actions.GrowSelectionCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanGrowSelection}"/>
+                                    <MenuItem Header="Shrink Selection"
+                                              Command="{Binding Actions.ShrinkSelectionCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanShrinkSelection}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Edge Loop"
+                                              Command="{Binding Actions.SelectEdgeLoopCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanSelectEdgeLoop}"/>
+                                    <MenuItem Header="Edge Ring"
+                                              Command="{Binding Actions.SelectEdgeRingCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanSelectEdgeRing}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Convert Selection">
+                                        <MenuItem Header="To Vertices"
+                                                  Command="{Binding Actions.ConvertSelectionToVerticesCommand}"
+                                                  IsEnabled="{Binding CommandPanel.Commands.CanConvertSelection}"/>
+                                        <MenuItem Header="To Edges"
+                                                  Command="{Binding Actions.ConvertSelectionToEdgesCommand}"
+                                                  IsEnabled="{Binding CommandPanel.Commands.CanConvertSelection}"/>
+                                        <MenuItem Header="To Faces"
+                                                  Command="{Binding Actions.ConvertSelectionToFacesCommand}"
+                                                  IsEnabled="{Binding CommandPanel.Commands.CanConvertSelection}"/>
+                                    </MenuItem>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Duplicate"
+                                          Command="{Binding Actions.DuplicateSelectionCommand}"
+                                          IsEnabled="{Binding CommandPanel.Commands.CanDuplicateSelection}"/>
+                                <Separator/>
+                                <MenuItem Header="Isolate Selection"
+                                          Command="{Binding Actions.IsolateSelectionCommand}"
+                                          IsEnabled="{Binding CommandPanel.Hierarchy.CanIsolate}"/>
+                                <MenuItem Header="Unhide All"
+                                          Command="{Binding Actions.UnhideAllCommand}"
+                                          IsEnabled="{Binding CommandPanel.Hierarchy.CanUnhide}"/>
+                                <Separator/>
+                                <MenuItem Header="Rename"
+                                          Command="{Binding Actions.RenameSelectionCommand}"
+                                          IsEnabled="{Binding CommandPanel.Hierarchy.CanRename}"/>
+                                <MenuItem Header="Delete"
+                                          Command="{Binding Actions.DeleteSelectionCommand}"
+                                          IsEnabled="{Binding CommandPanel.Hierarchy.CanDelete}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </Border>
-
-                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.SelectEdgeLoopCommand}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Edge Loop" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" Command="{Binding Actions.SelectEdgeRingCommand}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Edge Ring" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" IsEnabled="False">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Box Select" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                            <Button Classes="MaxRibbonButton" IsEnabled="False">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Paint Select" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                        <TextBlock Text="Selection" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
-                    </StackPanel>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowToolsGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Tools">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Selection Tools">
+                                    <MenuItem Header="Click"
+                                              Command="{Binding Options.SetSelectionToolCommand}"
+                                              CommandParameter="0"/>
+                                    <MenuItem Header="Box"
+                                              Command="{Binding Options.SetSelectionToolCommand}"
+                                              CommandParameter="1"/>
+                                    <MenuItem Header="Paint"
+                                              Command="{Binding Options.SetSelectionToolCommand}"
+                                              CommandParameter="2"/>
+                                    <MenuItem Header="Lasso"
+                                              Command="{Binding Options.SetSelectionToolCommand}"
+                                              CommandParameter="3"/>
+                                    <Separator/>
+                                    <MenuItem Header="Crossing"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.SelectionCrossing, Mode=TwoWay}"/>
+                                </MenuItem>
+                                <MenuItem Header="Selection Modes">
+                                    <MenuItem Header="Edit Mode"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.EditMode, Mode=TwoWay}"/>
+                                    <MenuItem Header="Vertex"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.VertexMode, Mode=TwoWay}"
+                                              IsEnabled="{Binding Options.EditMode}"/>
+                                    <MenuItem Header="Edge"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.EdgeMode, Mode=TwoWay}"
+                                              IsEnabled="{Binding Options.EditMode}"/>
+                                    <MenuItem Header="Face"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.FaceMode, Mode=TwoWay}"
+                                              IsEnabled="{Binding Options.EditMode}"/>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Transform">
+                                    <MenuItem Header="Move"
+                                              Command="{Binding Options.SetGizmoModeCommand}"
+                                              CommandParameter="0"/>
+                                    <MenuItem Header="Rotate"
+                                              Command="{Binding Options.SetGizmoModeCommand}"
+                                              CommandParameter="1"/>
+                                    <MenuItem Header="Scale"
+                                              Command="{Binding Options.SetGizmoModeCommand}"
+                                              CommandParameter="2"/>
+                                    <MenuItem Header="Axis Constraint">
+                                        <MenuItem Header="Free"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="0"/>
+                                        <MenuItem Header="X"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="1"/>
+                                        <MenuItem Header="Y"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="2"/>
+                                        <MenuItem Header="Z"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="3"/>
+                                        <MenuItem Header="XY"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="4"/>
+                                        <MenuItem Header="XZ"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="5"/>
+                                        <MenuItem Header="YZ"
+                                                  Command="{Binding Options.SetGizmoAxisCommand}"
+                                                  CommandParameter="6"/>
+                                    </MenuItem>
+                                    <Separator/>
+                                    <MenuItem Header="Show Gizmo"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.GizmoVisible, Mode=TwoWay}"/>
+                                    <MenuItem Header="Enable Snaps"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.GizmoSnapEnabled, Mode=TwoWay}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Transform Values..."
+                                              Command="{Binding Actions.TransformSelectionCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanNumericTransform}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Nudge +X" Command="{Binding Actions.NudgePosXCommand}"/>
+                                    <MenuItem Header="Nudge -X" Command="{Binding Actions.NudgeNegXCommand}"/>
+                                </MenuItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </Border>
-
-                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8">
-                    <StackPanel Spacing="6">
-                        <StackPanel Orientation="Horizontal" Spacing="6">
-                            <ToggleButton Classes="MaxRibbonButton" IsChecked="{Binding Options.GridEnabled, Mode=TwoWay}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Grid" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </ToggleButton>
-                            <ToggleButton Classes="MaxRibbonButton" IsChecked="{Binding Options.WireframeEnabled, Mode=TwoWay}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Wireframe" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </ToggleButton>
-                            <ToggleButton Classes="MaxRibbonButton" IsChecked="{Binding Options.GizmoSnapEnabled, Mode=TwoWay}">
-                                <StackPanel Spacing="4" HorizontalAlignment="Center">
-                                    <Border Width="24" Height="24" Background="#4B5662" CornerRadius="2"/>
-                                    <TextBlock Text="Snaps" Classes="MaxRibbonButtonLabel"/>
-                                </StackPanel>
-                            </ToggleButton>
-                        </StackPanel>
-                        <TextBlock Text="Display" Classes="MaxRibbonGroupTitle" HorizontalAlignment="Center"/>
-                    </StackPanel>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowGroupGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Group">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Group Selection" Command="{Binding Actions.GroupSelectionCommand}"/>
+                                <MenuItem Header="Ungroup" Command="{Binding Actions.UngroupSelectionCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowViewsGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Views">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Viewport">
+                                    <MenuItem Header="Perspective"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="0"/>
+                                    <MenuItem Header="Top"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="1"/>
+                                    <MenuItem Header="Front"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="2"/>
+                                    <MenuItem Header="Left"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="3"/>
+                                    <MenuItem Header="Right"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="4"/>
+                                    <MenuItem Header="Back"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="5"/>
+                                    <MenuItem Header="Bottom"
+                                              Command="{Binding Options.SetViewportViewCommand}"
+                                              CommandParameter="6"/>
+                                </MenuItem>
+                                <MenuItem Header="Shading">
+                                    <MenuItem Header="Default Shading"
+                                              Command="{Binding Options.SetViewportShadingCommand}"
+                                              CommandParameter="0"/>
+                                    <MenuItem Header="Wireframe"
+                                              Command="{Binding Options.SetViewportShadingCommand}"
+                                              CommandParameter="1"/>
+                                    <MenuItem Header="Unlit"
+                                              Command="{Binding Options.SetViewportShadingCommand}"
+                                              CommandParameter="2"/>
+                                </MenuItem>
+                                <MenuItem Header="Navigation">
+                                    <MenuItem Header="Default"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.IsNavDefault, Mode=TwoWay}"/>
+                                    <MenuItem Header="Pan"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.IsNavPan, Mode=TwoWay}"/>
+                                    <MenuItem Header="Orbit"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.IsNavOrbit, Mode=TwoWay}"/>
+                                    <MenuItem Header="Zoom"
+                                              ToggleType="CheckBox"
+                                              IsChecked="{Binding Options.IsNavZoom, Mode=TwoWay}"/>
+                                </MenuItem>
+                                <Separator/>
+                                <MenuItem Header="Zoom Extents" Command="{Binding Actions.ZoomExtentsCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowCreateGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Create">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Primitives">
+                                    <MenuItem Header="Box" Command="{Binding Actions.CreateCubeCommand}"/>
+                                    <MenuItem Header="Sphere" Command="{Binding Actions.CreateSphereCommand}"/>
+                                    <MenuItem Header="Cylinder" Command="{Binding Actions.CreateCylinderCommand}"/>
+                                    <MenuItem Header="Pyramid" Command="{Binding Actions.CreatePyramidCommand}"/>
+                                    <MenuItem Header="Plane" Command="{Binding Actions.CreatePlaneCommand}"/>
+                                    <MenuItem Header="Grid" Command="{Binding Actions.CreateGridCommand}"/>
+                                </MenuItem>
+                                <MenuItem Header="Lights">
+                                    <MenuItem Header="Directional Light" Command="{Binding Actions.CreateDirectionalLightCommand}"/>
+                                    <MenuItem Header="Point Light" Command="{Binding Actions.CreatePointLightCommand}"/>
+                                    <MenuItem Header="Spot Light" Command="{Binding Actions.CreateSpotLightCommand}"/>
+                                </MenuItem>
+                                <MenuItem Header="Cameras">
+                                    <MenuItem Header="Camera" Command="{Binding Actions.CreateCameraCommand}"/>
+                                </MenuItem>
+                                <MenuItem Header="Navigation">
+                                    <MenuItem Header="Nav Grid" Command="{Binding Actions.CreateNavGridCommand}"/>
+                                    <MenuItem Header="Flow Agent" Command="{Binding Actions.CreateFlowCommand}"/>
+                                    <MenuItem Header="Idle Area" Command="{Binding Actions.CreateIdleAreaCommand}"/>
+                                </MenuItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowModifiersGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Modifiers">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Face Tools">
+                                    <MenuItem Header="Extrude Faces"
+                                              Command="{Binding Actions.ExtrudeFacesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanExtrudeFaces}"/>
+                                    <MenuItem Header="Bevel Faces"
+                                              Command="{Binding Actions.BevelFacesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanBevelFaces}"/>
+                                    <MenuItem Header="Inset Faces"
+                                              Command="{Binding Actions.InsetFacesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanInsetFaces}"/>
+                                    <MenuItem Header="Detach Faces"
+                                              Command="{Binding Actions.DetachFacesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanDetachFaces}"/>
+                                    <MenuItem Header="Loop Cut"
+                                              Command="{Binding Actions.LoopCutEdgeLoopCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanLoopCutEdgeLoop}"/>
+                                </MenuItem>
+                                <MenuItem Header="Edge Tools">
+                                    <MenuItem Header="Split Edge"
+                                              Command="{Binding Actions.SplitEdgeCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanSplitEdge}"/>
+                                    <MenuItem Header="Bridge Edges"
+                                              Command="{Binding Actions.BridgeEdgesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanBridgeEdges}"/>
+                                    <MenuItem Header="Bridge Edge Loops"
+                                              Command="{Binding Actions.BridgeEdgeLoopsCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanBridgeEdgeLoops}"/>
+                                    <MenuItem Header="Dissolve Edge"
+                                              Command="{Binding Actions.DissolveEdgeCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanDissolveEdge}"/>
+                                    <MenuItem Header="Collapse Edge"
+                                              Command="{Binding Actions.CollapseEdgeCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanCollapseEdge}"/>
+                                </MenuItem>
+                                <MenuItem Header="Vertex Tools">
+                                    <MenuItem Header="Merge Vertices"
+                                              Command="{Binding Actions.MergeVerticesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanMergeVertices}"/>
+                                    <MenuItem Header="Weld Vertices" Command="{Binding Actions.WeldVerticesCommand}"/>
+                                </MenuItem>
+                                <MenuItem Header="Cleanup">
+                                    <MenuItem Header="Dissolve Faces"
+                                              Command="{Binding Actions.DissolveFacesCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanDissolveFaces}"/>
+                                    <MenuItem Header="Cleanup Mesh"
+                                              Command="{Binding Actions.CleanupMeshCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanCleanupMesh}"/>
+                                    <MenuItem Header="Smooth Mesh"
+                                              Command="{Binding Actions.SmoothMeshCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanSmoothMesh}"/>
+                                    <MenuItem Header="Simplify Mesh"
+                                              Command="{Binding Actions.SimplifyMeshCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanSimplifyMesh}"/>
+                                </MenuItem>
+                                <MenuItem Header="UV Tools">
+                                    <MenuItem Header="Planar UV"
+                                              Command="{Binding Actions.PlanarUvCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanPlanarUv}"/>
+                                    <MenuItem Header="Box UV"
+                                              Command="{Binding Actions.BoxUvCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanBoxUv}"/>
+                                    <MenuItem Header="Unwrap UV"
+                                              Command="{Binding Actions.UnwrapUvCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanUnwrapUv}"/>
+                                    <MenuItem Header="Pack UV"
+                                              Command="{Binding Actions.PackUvCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanPackUv}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Normalize UV"
+                                              Command="{Binding Actions.NormalizeUvCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanNormalizeUv}"/>
+                                    <MenuItem Header="Flip U"
+                                              Command="{Binding Actions.FlipUCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanFlipU}"/>
+                                    <MenuItem Header="Flip V"
+                                              Command="{Binding Actions.FlipVCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanFlipV}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Mark Seam"
+                                              Command="{Binding Actions.MarkUvSeamsCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanMarkUvSeams}"/>
+                                    <MenuItem Header="Clear Seam"
+                                              Command="{Binding Actions.ClearUvSeamsCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanClearUvSeams}"/>
+                                    <MenuItem Header="Clear All Seams"
+                                              Command="{Binding Actions.ClearAllUvSeamsCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanClearAllUvSeams}"/>
+                                    <MenuItem Header="Select Island"
+                                              Command="{Binding Actions.SelectUvIslandCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanSelectUvIsland}"/>
+                                    <Separator/>
+                                    <MenuItem Header="Assign UV Group"
+                                              Command="{Binding Actions.AssignUvGroupCommand}"
+                                              CommandParameter="{Binding Options.UvGroupId}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanAssignUvGroup}"/>
+                                    <MenuItem Header="Clear UV Group"
+                                              Command="{Binding Actions.ClearUvGroupCommand}"
+                                              IsEnabled="{Binding CommandPanel.Commands.CanClearUvGroup}"/>
+                                </MenuItem>
+                                <MenuItem Header="Transform">
+                                    <MenuItem Header="Center Pivot"
+                                              Command="{Binding Actions.CenterPivotCommand}"
+                                              IsEnabled="{Binding CommandPanel.Hierarchy.CanCenterPivot}"/>
+                                    <MenuItem Header="Reset Transform"
+                                              Command="{Binding Actions.ResetTransformCommand}"
+                                              IsEnabled="{Binding CommandPanel.Hierarchy.CanResetTransform}"/>
+                                </MenuItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowAnimationGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Animation">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="{Binding CommandPanel.Motion.PlayLabel}"
+                                          ToggleType="CheckBox"
+                                          IsChecked="{Binding CommandPanel.Motion.IsPlaying, Mode=TwoWay}"
+                                          IsEnabled="{Binding CommandPanel.Motion.CanPlay}"/>
+                                <MenuItem Header="Loop"
+                                          ToggleType="CheckBox"
+                                          IsChecked="{Binding CommandPanel.Motion.Loop, Mode=TwoWay}"
+                                          IsEnabled="{Binding CommandPanel.Motion.CanLoop}"/>
+                                <MenuItem Header="Reset"
+                                          Command="{Binding Actions.AnimationResetCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.CanReset}"/>
+                                <MenuItem Header="Auto Key"
+                                          ToggleType="CheckBox"
+                                          IsChecked="{Binding CommandPanel.Motion.AutoKeyEnabled, Mode=TwoWay}"
+                                          IsEnabled="{Binding CommandPanel.Motion.CanSetKey}"/>
+                                <MenuItem Header="Set Key"
+                                          Command="{Binding CommandPanel.Motion.SetKeyCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.CanSetKey}"/>
+                                <MenuItem Header="Clear Keys" Command="{Binding Actions.ClearAnimationKeysCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="New Clip" Command="{Binding CommandPanel.Motion.Editor.CreateClipCommand}"/>
+                                <MenuItem Header="Duplicate Clip"
+                                          Command="{Binding CommandPanel.Motion.Editor.DuplicateClipCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditClip}"/>
+                                <MenuItem Header="Delete Clip"
+                                          Command="{Binding CommandPanel.Motion.Editor.DeleteClipCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditClip}"/>
+                                <Separator/>
+                                <MenuItem Header="Add Track"
+                                          Command="{Binding CommandPanel.Motion.Editor.AddTrackCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditClip}"/>
+                                <MenuItem Header="Remove Track"
+                                          Command="{Binding CommandPanel.Motion.Editor.RemoveTrackCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditTrack}"/>
+                                <Separator/>
+                                <MenuItem Header="Delete Key"
+                                          Command="{Binding CommandPanel.Motion.Editor.DeleteKeyCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditKey}"/>
+                                <MenuItem Header="Prev Key"
+                                          Command="{Binding CommandPanel.Motion.Editor.PrevKeyCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.HasSelectedTrack}"/>
+                                <MenuItem Header="Next Key"
+                                          Command="{Binding CommandPanel.Motion.Editor.NextKeyCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.HasSelectedTrack}"/>
+                                <MenuItem Header="Jump To Key"
+                                          Command="{Binding CommandPanel.Motion.Editor.JumpToKeyCommand}"
+                                          IsEnabled="{Binding CommandPanel.Motion.Editor.CanEditKey}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowGraphGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Graph Editors">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Material Graph..." Command="{Binding Actions.OpenMaterialGraphCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowRenderingGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Rendering">
+                        <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuItem Header="Depth Buffer" ToggleType="CheckBox" IsChecked="{Binding Options.DepthEnabled, Mode=TwoWay}"/>
+                                    <MenuItem Header="Lighting" ToggleType="CheckBox" IsChecked="{Binding Options.LightingEnabled, Mode=TwoWay}"/>
+                                    <MenuItem Header="Image Based Lighting" ToggleType="CheckBox" IsChecked="{Binding Options.ImageBasedLightingEnabled, Mode=TwoWay}"/>
+                                    <MenuItem Header="Backface Culling" ToggleType="CheckBox" IsChecked="{Binding Options.BackfaceCullingEnabled, Mode=TwoWay}"/>
+                                    <MenuItem Header="Wireframe" ToggleType="CheckBox" IsChecked="{Binding Options.WireframeEnabled, Mode=TwoWay}"/>
+                                    <MenuItem Header="Shadows" ToggleType="CheckBox" IsChecked="{Binding Options.ShadowEnabled, Mode=TwoWay}"/>
+                                    <MenuItem Header="SSAO" ToggleType="CheckBox" IsChecked="{Binding Options.SsaoEnabled, Mode=TwoWay}"/>
+                                <Separator/>
+                                <MenuItem Header="Post FX" ToggleType="CheckBox" IsChecked="{Binding Options.PostProcessingEnabled, Mode=TwoWay}"/>
+                                <MenuItem Header="Bloom" ToggleType="CheckBox" IsChecked="{Binding Options.BloomEnabled, Mode=TwoWay}"/>
+                                <MenuItem Header="FXAA" ToggleType="CheckBox" IsChecked="{Binding Options.FxaaEnabled, Mode=TwoWay}"/>
+                                <MenuItem Header="Tone Mapping">
+                                    <MenuItem Header="None"
+                                              Command="{Binding Options.SetToneMappingCommand}"
+                                              CommandParameter="0"/>
+                                    <MenuItem Header="Reinhard"
+                                              Command="{Binding Options.SetToneMappingCommand}"
+                                              CommandParameter="1"/>
+                                    <MenuItem Header="ACES"
+                                              Command="{Binding Options.SetToneMappingCommand}"
+                                              CommandParameter="2"/>
+                                </MenuItem>
+                                <MenuItem Header="Grid" ToggleType="CheckBox" IsChecked="{Binding Options.GridEnabled, Mode=TwoWay}"/>
+                                <MenuItem Header="Pause" ToggleType="CheckBox" IsChecked="{Binding Options.PauseEnabled, Mode=TwoWay}"/>
+                                <MenuItem Header="Pick Debug" ToggleType="CheckBox" IsChecked="{Binding Options.PickDebugEnabled, Mode=TwoWay}"/>
+                                <MenuItem Header="Show Stats" ToggleType="CheckBox" IsChecked="{Binding Options.ShowStats, Mode=TwoWay}"/>
+                                <MenuItem Header="Show UV Seams" ToggleType="CheckBox" IsChecked="{Binding Options.UvShowSeams, Mode=TwoWay}"/>
+                                <MenuItem Header="Show UV Islands" ToggleType="CheckBox" IsChecked="{Binding Options.UvShowIslands, Mode=TwoWay}"/>
+                                <Separator/>
+                                <MenuItem Header="Pick Acceleration">
+                                    <MenuItem Header="Auto"
+                                              Command="{Binding Options.SetPickAccelCommand}"
+                                              CommandParameter="0"/>
+                                    <MenuItem Header="BVH"
+                                              Command="{Binding Options.SetPickAccelCommand}"
+                                              CommandParameter="1"/>
+                                    <MenuItem Header="Uniform Grid"
+                                              Command="{Binding Options.SetPickAccelCommand}"
+                                              CommandParameter="2"/>
+                                </MenuItem>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowCivilGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Civil View">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Nav Grid" Command="{Binding Actions.CreateNavGridCommand}"/>
+                                <MenuItem Header="Flow Agent" Command="{Binding Actions.CreateFlowCommand}"/>
+                                <MenuItem Header="Idle Area" Command="{Binding Actions.CreateIdleAreaCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Clear Civil View" Command="{Binding Actions.ClearNavigationCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowCustomizeGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Customize">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Workspace Manager"
+                                          ToggleType="CheckBox"
+                                          IsChecked="{Binding Workspace.IsManagerOpen, Mode=TwoWay}"/>
+                                <MenuItem Header="Reset Layout" Command="{Binding Workspace.ResetLayoutCommand}"/>
+                                <Separator/>
+                                <MenuItem Header="Ribbon" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowRibbon, Mode=TwoWay}"/>
+                                <MenuItem Header="Scene Explorer" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowSceneExplorer, Mode=TwoWay}"/>
+                                <MenuItem Header="Command Panel" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowCommandPanel, Mode=TwoWay}"/>
+                                <MenuItem Header="Viewport Toolbar" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowViewportToolbar, Mode=TwoWay}"/>
+                                <MenuItem Header="Timeline" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowTimeline, Mode=TwoWay}"/>
+                                <MenuItem Header="Status Bar" ToggleType="CheckBox" IsChecked="{Binding Workspace.ShowStatusBar, Mode=TwoWay}"/>
+                                <Separator/>
+                                <MenuItem Header="Command Palette"
+                                          ToggleType="CheckBox"
+                                          IsChecked="{Binding CommandPalette.IsOpen, Mode=TwoWay}"/>
+                                <MenuItem Header="Shortcut Editor"
+                                          ToggleType="CheckBox"
+                                          IsChecked="{Binding Shortcuts.IsOpen, Mode=TwoWay}"/>
+                                <MenuItem Header="Shortcut Reference" Command="{Binding Actions.ToggleShortcutsCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowScriptingGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Scripting">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Script Console..." Command="{Binding Actions.OpenScriptConsoleCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowContentGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Content">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Assign Texture..." Command="{Binding Actions.AssignTextureCommand}"/>
+                                <MenuItem Header="Assign Checker Texture" Command="{Binding Actions.AssignCheckerTextureCommand}"/>
+                                <MenuItem Header="Clear Textures" Command="{Binding Actions.ClearTexturesCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Border>
+                <Border Classes="MaxRibbonGroup" Margin="0,0,8,8" IsVisible="{Binding ShowHelpGroup}">
+                    <Button Classes="MaxRibbonButton" Content="Help">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuItem Header="Shortcut Reference" Command="{Binding Actions.ToggleShortcutsCommand}"/>
+                                <MenuItem Header="About" Command="{Binding Actions.ShowAboutCommand}"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </Border>
             </WrapPanel>
         </StackPanel>

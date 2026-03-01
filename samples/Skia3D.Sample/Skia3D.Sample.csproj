@@ -13,7 +13,16 @@
     <PackageReference Include="Avalonia.Skia" Version="11.3.11" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.11" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.11" />
+    <PackageReference Include="Dock.Avalonia" Version="11.3.11" />
+    <PackageReference Include="Dock.Avalonia.Themes.Fluent" Version="11.3.11" />
+    <PackageReference Include="Dock.Model" Version="11.3.11" />
+    <PackageReference Include="Dock.Model.ReactiveUI" Version="11.3.11" />
+    <PackageReference Include="Dock.Serializer.SystemTextJson" Version="11.3.11" />
+    <PackageReference Include="ProDataGrid" Version="11.3.9-preview.30" />
+    <PackageReference Include="ReactiveUI" Version="22.3.1" />
+    <PackageReference Include="ReactiveUI.Avalonia" Version="14.7.1" />
     <PackageReference Include="SkiaSharp" Version="2.88.9" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" Version="11.3.9.3" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Include="Avalonia.Diagnostics" Version="11.3.11">
       <IncludeAssets Condition="'$(Configuration)' != 'Debug'">None</IncludeAssets>
@@ -22,14 +31,22 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Skia3D.Acceleration\Skia3D.Acceleration.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Assets\Skia3D.Assets.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Audio\Skia3D.Audio.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Core\Skia3D.Core.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Animation\Skia3D.Animation.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Editor\Skia3D.Editor.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Geometry\Skia3D.Geometry.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Input\Skia3D.Input.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.IO\Skia3D.IO.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Modeling\Skia3D.Modeling.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Navigation\Skia3D.Navigation.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Physics\Skia3D.Physics.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Rendering\Skia3D.Rendering.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Runtime\Skia3D.Runtime.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.Scene\Skia3D.Scene.csproj" />
     <ProjectReference Include="..\..\src\Skia3D.ShaderGraph\Skia3D.ShaderGraph.csproj" />
+    <ProjectReference Include="..\..\src\Skia3D.Vfx\Skia3D.Vfx.csproj" />
   </ItemGroup>
 </Project>

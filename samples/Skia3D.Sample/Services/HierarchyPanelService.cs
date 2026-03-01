@@ -57,6 +57,7 @@ public sealed class HierarchyPanelService : IDisposable
         _viewModel.CanRename = node != null;
         _viewModel.CanIsolate = node != null;
         _viewModel.CanUnhide = HasHiddenNodes();
+        _viewModel.CanDelete = node != null;
         _viewModel.SelectionLabel = node == null ? "Selection: none" : $"Selection: {node.Name}";
 
         if (node == null)

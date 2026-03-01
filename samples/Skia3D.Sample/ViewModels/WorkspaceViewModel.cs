@@ -11,6 +11,7 @@ public sealed class WorkspaceViewModel : ViewModelBase
 {
     private readonly EditorActionsViewModel _actions;
     private readonly WorkspaceLayoutStore _store;
+    private IDockLayoutService? _dockLayoutService;
     private readonly Dictionary<string, WorkspaceLayout> _layouts;
     private readonly ObservableCollection<string> _workspaces;
     private string _selectedWorkspace = string.Empty;
@@ -190,6 +191,15 @@ public sealed class WorkspaceViewModel : ViewModelBase
 
     public DelegateCommand ResetLayoutCommand { get; }
 
+    public void AttachDockLayoutService(IDockLayoutService dockLayoutService)
+    {
+        _dockLayoutService = dockLayoutService;
+        if (!string.IsNullOrWhiteSpace(_selectedWorkspace) && _layouts.TryGetValue(_selectedWorkspace, out var layout))
+        {
+            _dockLayoutService.RestoreLayout(layout.DockLayout);
+        }
+    }
+
     private void ToggleManager()
     {
         IsManagerOpen = !IsManagerOpen;
@@ -205,6 +215,7 @@ public sealed class WorkspaceViewModel : ViewModelBase
         var layout = BuildDefaultLayout(_selectedWorkspace);
         _layouts[_selectedWorkspace] = layout;
         ApplyLayout(layout);
+        _dockLayoutService?.ResetLayout();
         PersistLayouts();
     }
 
@@ -227,6 +238,7 @@ public sealed class WorkspaceViewModel : ViewModelBase
         ShowViewportToolbar = layout.ShowViewportToolbar;
         ShowTimeline = layout.ShowTimeline;
         ShowStatusBar = layout.ShowStatusBar;
+        _dockLayoutService?.RestoreLayout(layout.DockLayout);
     }
 
     private WorkspaceLayout BuildSnapshot(string name)
@@ -239,7 +251,8 @@ public sealed class WorkspaceViewModel : ViewModelBase
             ShowCommandPanel = ShowCommandPanel,
             ShowViewportToolbar = ShowViewportToolbar,
             ShowTimeline = ShowTimeline,
-            ShowStatusBar = ShowStatusBar
+            ShowStatusBar = ShowStatusBar,
+            DockLayout = _dockLayoutService?.CaptureLayout()
         };
     }
 

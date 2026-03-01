@@ -16,6 +16,7 @@ public sealed class HierarchyPanelViewModel : ViewModelBase
     private bool _canRename;
     private bool _canIsolate;
     private bool _canUnhide;
+    private bool _canDelete;
     private bool _suppressSelectionEvent;
 
     public event Action<SceneNodeItem?>? SelectionChanged;
@@ -173,6 +174,21 @@ public sealed class HierarchyPanelViewModel : ViewModelBase
             }
 
             _canUnhide = value;
+            RaisePropertyChanged();
+        }
+    }
+
+    public bool CanDelete
+    {
+        get => _canDelete;
+        set
+        {
+            if (_canDelete == value)
+            {
+                return;
+            }
+
+            _canDelete = value;
             RaisePropertyChanged();
         }
     }

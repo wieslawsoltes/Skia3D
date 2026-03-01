@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:Skia3D.Sample.ViewModels"
              x:Class="Skia3D.Sample.Controls.QuadMenuControl"
-             x:DataType="vm:MainWindowViewModel">
+             x:DataType="vm:ViewportDockContext">
     <Border Classes="MaxQuadMenu">
         <Grid ColumnDefinitions="*,*" RowDefinitions="*,*" ColumnSpacing="10" RowSpacing="10">
             <Border Classes="MaxQuadPanel" Grid.Row="0" Grid.Column="0">
